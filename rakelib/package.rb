@@ -36,6 +36,6 @@ module Package
 
   STAGING_DIR = "#{BUILD_DIR}/staging".freeze
 
-  PACKAGE_NAME = "#{BUILD_DIR}/egov-java-buildpack#{offline}-#{version}.zip".freeze
+  PACKAGE_NAME = "#{BUILD_DIR}/egov-buildpack#{offline}-#{version}.zip".freeze
 
 end
