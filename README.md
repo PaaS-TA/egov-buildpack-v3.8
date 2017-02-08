@@ -46,8 +46,7 @@ Creating build/egov-buildpack-offline-egov3.5.zip
 <우선순위> : 검출(detect) 우선순위이다. 일반 Java 빌드팩보다 후순위로 우선순위를 지정한다.  
 
 <div id='notice-01'></div>
-※ 모든 빌드팩은 검출 기준을 갖는다. 이를 통해 애플리케이션 배포시, 사용자가 빌드팩을 지정해주지 않아도 해당 소스에 맞는 빌드팩을 자동으로 찾아준다. 이떄, 같은 검출 기준을 가진 빌드팩이 여러개 있을 경우에는 우선순위에 따라 가장 우선순위가 높은 빌드팩을 사용하게 된다.  
-전자정부 빌드팩은 Java 빌드팩과 동일한 검출 기준을 갖고 있으므로 전자정부 빌드팩이 Java 빌드팩보다 우선순위가 높을 경우, 빌드팩을 지정하지 않고 배포하는 일반 Java 애플리케이션은 전자정부 빌드팩을 사용하게 된다. 이러한 혼란을 방지하기 위해 전자정부 빌드팩은 Java 빌드팩보다 우선 순위를 낮게 지정한다. (번호가 낮을 수록 우선순위가 높기 때문에 Java 빌드팩보다 높은 번호로 지정한다.)
+  ※ 모든 빌드팩은 검출 기준을 갖는다. 이를 통해 애플리케이션 배포시, 사용자가 빌드팩을 지정해주지 않아도 해당 소스에 맞는 빌드팩을 자동으로 찾아준다. 이떄, 같은 검출 기준을 가진 빌드팩이 여러개 있을 경우에는 우선순위에 따라 가장 우선순위가 높은 빌드팩을 사용하게 된다. 전자정부 빌드팩은 Java 빌드팩과 동일한 검출 기준을 갖고 있으므로 전자정부 빌드팩이 Java 빌드팩보다 우선순위가 높을 경우, 빌드팩을 지정하지 않고 배포하는 일반 Java 애플리케이션은 전자정부 빌드팩을 사용하게 된다. 이러한 혼란을 방지하기 위해 전자정부 빌드팩은 Java 빌드팩보다 우선 순위를 낮게 지정한다. (번호가 낮을 수록 우선순위가 높기 때문에 Java 빌드팩보다 높은 번호로 지정한다.)
 
 `cf create-buildpack egov_buildpack_v35 build/egov-buildpack-offline-egov3.5.zip 12`  
 
@@ -60,7 +59,7 @@ Done uploading
 OK
 ```
 
-- 업로드 된 빌드팩을 확인
+- 업로드 된 빌드팩을 확인  
 
 `cf buildpacks`  
 
@@ -101,7 +100,7 @@ PaaS-TA에서 전자정부 빌드팩을 사용하여 애플리케이션을 배�
 #### 2. Manifest 수정
 PaaS-TA 전자정부 빌드팩은 애플리케이션이 두 가지 WAS(Tomcat/Jboss)중 한 가지 WAS를 선택하여 구동될 수 있도록 구성되어 있다. 어떤 WAS를 선택할지, manifest 파일에 명시한다.
 
-- manifest 파일 수정 (Tomcat 선택)
+- manifest 파일 수정 (Tomcat 선택)  
 기본적으로 manifest 파일은 WAS를 Tomcat으로 설정할 수 있도록 작성되어 있다. 최하단 'JBP_CONFIG_COMPONENTS' 옵션에 '[containers: Tomcat]'으로 값을 입력하면 Tomcat을 사용하여 애플리케이션이 배포된다. 또한, 'JBP_CONFIG_COMPONENTS' 값이 존재하지 않는 경우에도 기본값으로 Tomcat을 사용한다. 
 ※ 값 입력시, 대소문자에 유의한다. 첫 글자만 대문자이다. 'tomcat', 'TOMCAT' 등은 허용하지 않는다.
 ```
@@ -115,7 +114,7 @@ applications:
     JBP_CONFIG_COMPONENTS: '[containers: Tomcat]'
 ```
 
-- manifest 파일 수정 (Jboss 선택)
+- manifest 파일 수정 (Jboss 선택)  
 최하단 'JBP_CONFIG_COMPONENTS' 옵션에 '[containers: Jboss]'으로 값을 수정하면 Jboss를 사용하여 애플리케이션이 배포된다. 
 ※ 값 입력시, 대소문자에 유의한다. 첫 글자만 대문자이다. 'jboss', 'JBOSS' 등은 허용하지 않는다.
 ```
@@ -132,8 +131,9 @@ applications:
 #### 3. 샘플 애플리케이션 배포
 빌드팩을 지정하여 애플리케이션을 배포한다. 애플리케이션 배포시에는 PaaS-TA에 로그인 및 조직과 공간에 대한 target 설정이 되어 있어야 하며, 로그인 된 계정은 해당 조직과 공간에 애플리케이션을 배포할 수 있는 권한을 지니고 있어야 한다.
 
-- 샘플 애플리케이션 디렉토리로 이동
+- 샘플 애플리케이션 디렉토리로 이동  
 현재 디렉토리에 애플리케이션 war 파일과 manifest 파일이 존재해야 한다. 
+
 `cd Egov/hellot-egov-board/for_push`
 
 - 애플리케이션 배포
@@ -173,7 +173,7 @@ hello-egov-boardT   started           1/1         1G       1G     hello-egov-boa
 http://hello-egov-boardt.115.68.46.186.xip.io/
 ```
 
-데이터 베이스 설정을 하지 않았기 때문에 오류 메시지가 나오지만 빌드팩은 정상적으로 동작하는 것이 확인된다.
+데이터 베이스 설정을 하지 않았기 때문에 오류 메시지가 나오지만 빌드팩은 정상적으로 동작하는 것이 확인된다.  
 ![egov_buildpack_image_01]
 
 
