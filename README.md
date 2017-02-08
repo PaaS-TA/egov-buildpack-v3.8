@@ -94,7 +94,7 @@ PaaS-TA에서 전자정부 빌드팩을 사용하여 애플리케이션을 배�
 
 - 샘플 애플리케이션 확인  
 
->애플리케이션 war 파일 : Egov/hellot-egov-board/for_push/hello-egov-board-1.0.0.war
+>애플리케이션 war 파일 : Egov/hellot-egov-board/for_push/hello-egov-board-1.0.0.war  
 >manifest 파일 : Egov/hellot-egov-board/for_push/manifest.yml
 
 
