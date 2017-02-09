@@ -168,6 +168,7 @@ buildpack: egov_buildpack_v35
 name                requested state   instances   memory   disk   urls
 hello-egov-boardT   started           1/1         1G       1G     hello-egov-boardt.115.68.46.186.xip.io
 ```
+
 - 애플리케이션 접속 확인  
 브라우저를 통해 애플리케이션 url로 접속한다.
 
