@@ -1,6 +1,7 @@
 # PaaS-TA 전자정부(egov) 빌드팩
 PaaS-TA에서 구동되는 애플리케이션은 다양한 언어, 프레임워크를 사용하여 개발될 수 있다. 빌드팩은 이처럼 다양한 환경에서 개발된 애플리케이션이 PaaS-TA에서 구동될 수 있게 지원하는 역할을 한다. 전자정부 빌드팩 v3.5는 전자정부 프레임워크 (https://www.egovframe.go.kr/)를 적용하여 개발된 애플리케이션이 PaaS-TA에서 구동될 수 있도록 지원한다.
 
+
 ### PaaS-TA에 전자정부 빌드팩 등록
 PaaS-TA에서 전자정부 빌드팩을 등록하기 위해서는 빌드팩 소스 Clone, 빌드팩 패키지, 업로드의 3가지 절차가 필요하다. 하단에 순서대로 설명을 기재한다.
 
@@ -36,7 +37,7 @@ Creating build/egov-buildpack-offline-egov3.5.zip
 #### 3. 빌드팩 업로드
 패키징된 빌드팩을 PaaS-TA에 업로드한다. 이때 PaaS-TA는 빌드팩을 업로드 권한을 가진 사용자로 로그인 할 것을 요구한다. 일반 사용자는 빌드팩을 업로드 할 수 없으므로 관리자 계정으로 로그인하여 빌드팩 업로드를 수행한다.
 
-- 빌드팩 업로드
+- 빌드팩 업로드  
 
 빌드팩 업로드 명령어는 다음의 형태로 입력하게 되어있다.  
 `cf create-buildpack <생성할 이름> <패키지 파일> <우선순위>`  
@@ -81,6 +82,7 @@ egov_buildpack_v35       12         true      false    egov-buildpack-offline-eg
 
 ### 전자정부 빌드팩 사용
 PaaS-TA에서 전자정부 빌드팩을 사용하여 애플리케이션을 배포하는 방법을 설명하기 위해 전자정부 프레임워크가 적용된 샘플 애플리케이션을 배포한다.
+
 
 #### 1. 샘플 애플리케이션 다운로드
 
@@ -136,7 +138,7 @@ applications:
 
 `cd Egov/hellot-egov-board/for_push`
 
-- 애플리케이션 배포
+- 애플리케이션 배포  
 [상단](#notice-01)에 서술한대로, 샘플 애플리케이션은 빌드팩을 지정하지 않은 경우에는 Java 빌드팩으로 배포되기 때문에 적절한 배포가 이루어지지 않는다. 반드시 업로드한 전자정부 빌드팩을 지정하여 배포한다.
 
 `cf push -b egov_buildpack_v35`
@@ -157,7 +159,7 @@ buildpack: egov_buildpack_v35
 #0   running   2017-02-08 05:41:59 PM   158.4%   371.5M of 1G   182.1M of 1G
 ```
 
-- 애플리케이션 배포 확인
+- 애플리케이션 배포 확인  
 명령어를 이용하여 애플리케이션의 배포 여부와 상태를 확인한다.
 
 `cf apps`
@@ -166,7 +168,7 @@ buildpack: egov_buildpack_v35
 name                requested state   instances   memory   disk   urls
 hello-egov-boardT   started           1/1         1G       1G     hello-egov-boardt.115.68.46.186.xip.io
 ```
-- 애플리케이션 접속 확인
+- 애플리케이션 접속 확인  
 브라우저를 통해 확인된 url로 접속한다.
 
 ```
