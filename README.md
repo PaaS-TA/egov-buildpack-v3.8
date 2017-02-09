@@ -100,7 +100,7 @@ PaaS-TA에서 전자정부 빌드팩을 사용하여 애플리케이션을 배�
 
 
 #### 2. Manifest 수정
-PaaS-TA 전자정부 빌드팩은 두 가지 WAS(Tomcat/Jboss)중 한 가지 WAS를 선택하여 애플리케이션을 구동 시킬수 있도록 구성되어 있다. 어떤 WAS를 선택할지, manifest 파일에 명시한다.  
+PaaS-TA 전자정부 빌드팩은 두 가지 WAS(Tomcat/Jboss)중 한 가지 WAS를 선택하여 애플리케이션을 구동시킬 수 있도록 구성되어 있다. 어떤 WAS를 선택할지, manifest 파일에 명시한다.  
 
 - manifest 파일 수정 (Tomcat 선택)  
 기본적으로 manifest 파일은 WAS를 Tomcat으로 설정할 수 있도록 작성되어 있다. 최하단 'JBP_CONFIG_COMPONENTS' 옵션에 '[containers: Tomcat]'으로 값을 입력하면 Tomcat을 사용하여 애플리케이션이 배포된다. 또한, 'JBP_CONFIG_COMPONENTS' 값이 존재하지 않는 경우에도 기본값으로 Tomcat을 사용한다.  
