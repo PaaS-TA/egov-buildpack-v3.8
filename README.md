@@ -88,7 +88,7 @@ PaaS-TA에서 전자정부 프레임워크 빌드팩을 사용하여 애플리�
 
 - PaaS-TA 팀에서 제공하는 샘플 애플리케이션 다운로드  
 
->PaaSTA-Sample-Apps : **<http://extdisk.hancom.com:8080/share.cgi?ssid=0S8FdZz>**  
+>PaaSTA-Sample-Apps : **<https://paas-ta.kr/data/packages/2.0/PaaSTA-Sample-Apps.zip>**  
 
 
 압축 파일을 다운로드하고 압축을 해제하면 다음 경로에서 샘플 애플리케이션 war 파일과 manifest 파일을 찾을 수 있다.
