@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,23 +22,23 @@ require 'java_buildpack/util/configuration_utils'
 require 'java_buildpack/util/cache/internet_availability'
 
 describe JavaBuildpack::Util::Cache::InternetAvailability do
-  include_context 'internet_availability_helper'
-  include_context 'logging_helper'
+  include_context 'with internet availability help'
+  include_context 'with logging help'
 
   it 'uses internet by default' do
-    expect(described_class.instance.available?).to be
+    expect(described_class.instance).to be_available
   end
 
   context do
 
     before do
       allow(JavaBuildpack::Util::ConfigurationUtils).to receive(:load).with('cache')
-                                                          .and_return('remote_downloads' => 'disabled')
+                                                                      .and_return('remote_downloads' => 'disabled')
       described_class.instance.send :initialize
     end
 
     it 'does not use internet if remote downloads are disabled' do
-      expect(described_class.instance.available?).not_to be
+      expect(described_class.instance).not_to be_available
     end
   end
 
@@ -46,7 +47,7 @@ describe JavaBuildpack::Util::Cache::InternetAvailability do
 
     described_class.instance.available false
 
-    expect(described_class.instance.available?).not_to be
+    expect(described_class.instance).not_to be_available
     expect(log_contents).not_to match(/Internet availability set to false/)
   end
 
@@ -55,26 +56,26 @@ describe JavaBuildpack::Util::Cache::InternetAvailability do
 
     described_class.instance.available false, 'test message'
 
-    expect(described_class.instance.available?).not_to be
+    expect(described_class.instance).not_to be_available
     expect(log_contents).to match(/Internet availability set to false: test message/)
   end
 
   it 'temporarily sets internet unavailable' do
-    expect(described_class.instance.available?).to be
+    expect(described_class.instance).to be_available
 
-    described_class.instance.available(false) { expect(described_class.instance.available?).not_to be }
+    described_class.instance.available(false) { expect(described_class.instance).not_to be_available }
 
-    expect(described_class.instance.available?).to be
+    expect(described_class.instance).to be_available
   end
 
   it 'temporarily sets internet available',
      :disable_internet do
 
-    expect(described_class.instance.available?).not_to be
+    expect(described_class.instance).not_to be_available
 
-    described_class.instance.available(true) { expect(described_class.instance.available?).to be }
+    described_class.instance.available(true) { expect(described_class.instance).to be_available }
 
-    expect(described_class.instance.available?).not_to be
+    expect(described_class.instance).not_to be_available
   end
 
 end

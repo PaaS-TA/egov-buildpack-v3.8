@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,7 +22,7 @@ require 'java_buildpack/util/tokenized_version'
 
 describe JavaBuildpack::Repository::ConfiguredItem do
 
-  let(:repository_index) { double('RepositoryIndex', find_item: [resolved_version, resolved_uri]) }
+  let(:repository_index) { instance_double('RepositoryIndex', find_item: [resolved_version, resolved_uri]) }
 
   let(:resolved_uri) { 'resolved-uri' }
 
@@ -32,14 +33,14 @@ describe JavaBuildpack::Repository::ConfiguredItem do
   end
 
   it 'raises an error if no repository root is specified' do
-    expect { described_class.find_item('Test', {}) }.to raise_error
+    expect { described_class.find_item('Test', {}) }.to raise_error(/A repository root must be specified/)
   end
 
   it 'resolves a system.properties version if specified' do
     details = described_class.find_item('Test',
-                                        'repository_root'      => 'test-repository-root',
+                                        'repository_root' => 'test-repository-root',
                                         'java.runtime.version' => 'test-java-runtime-version',
-                                        'version'              => '1.7.0')
+                                        'version' => '1.7.0')
 
     expect(details[0]).to eq(resolved_version)
     expect(details[1]).to eq(resolved_uri)
@@ -48,7 +49,7 @@ describe JavaBuildpack::Repository::ConfiguredItem do
   it 'resolves a configuration version if specified' do
     details = described_class.find_item('Test',
                                         'repository_root' => 'test-repository-root',
-                                        'version'         => '1.7.0')
+                                        'version' => '1.7.0')
 
     expect(details[0]).to eq(resolved_version)
     expect(details[1]).to eq(resolved_uri)
@@ -57,7 +58,7 @@ describe JavaBuildpack::Repository::ConfiguredItem do
   it 'drives the version validator block if supplied' do
     described_class.find_item('Test',
                               'repository_root' => 'test-repository-root',
-                              'version'         => '1.7.0') do |version|
+                              'version' => '1.7.0') do |version|
       expect(version).to eq(JavaBuildpack::Util::TokenizedVersion.new('1.7.0'))
     end
   end

@@ -1,5 +1,5 @@
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,39 +19,58 @@ containers:
   - "JavaBuildpack::Container::DistZip"
   - "JavaBuildpack::Container::Groovy"
   - "JavaBuildpack::Container::JavaMain"
-  - "JavaBuildpack::Container::Jboss"
   - "JavaBuildpack::Container::PlayFramework"
   - "JavaBuildpack::Container::Ratpack"
   - "JavaBuildpack::Container::SpringBoot"
   - "JavaBuildpack::Container::SpringBootCLI"
   - "JavaBuildpack::Container::Tomcat"
+  - "JavaBuildpack::Container::Jboss"
 
-# In order to use Oracle JREs instead of OpenJDK, you must comment out the OpenJDK line and uncomment the Oracle line.
+# List of available JREs. In order to use a different one either comment out the OpenJDK line and uncomment the desired one or use environment variables to change this configuration.
+# Example: cf set-env JBP_CONFIG_COMPONENTS '{jres: ["JavaBuildpack::Jre::OpenJdkJRE"]}'
 # Please see the documentation for more detail.
 jres:
+# - "JavaBuildpack::Jre::IbmJRE"
   - "JavaBuildpack::Jre::OpenJdkJRE"
 # - "JavaBuildpack::Jre::OracleJRE"
+# - "JavaBuildpack::Jre::ZuluJRE"
+# - "JavaBuildpack::Jre::SapMachineJRE"
 
-# Frameworks are processed in order. Any Java Opts added by the JavaOpts framework will be specified in the start
-# command after any Java Opts added by previous frameworks.
-
+# Frameworks are processed in order.
+# The MultiBuildpack framework is first in order to allow any framework to override contributions from earlier buildpacks
+# The JavaOpts is last in order to allow any user-defined JAVA_OPTS to override contributions from earlier frameworks
 frameworks:
+  - "JavaBuildpack::Framework::MultiBuildpack"
   - "JavaBuildpack::Framework::AppDynamicsAgent"
-  - "JavaBuildpack::Framework::ContainerCertificateTrustStore"
+  - "JavaBuildpack::Framework::AspectjWeaverAgent"
+  - "JavaBuildpack::Framework::AzureApplicationInsightsAgent"
+  - "JavaBuildpack::Framework::ClientCertificateMapper"
   - "JavaBuildpack::Framework::ContainerCustomizer"
+  - "JavaBuildpack::Framework::ContainerSecurityProvider"
+  - "JavaBuildpack::Framework::ContrastSecurityAgent"
   - "JavaBuildpack::Framework::Debug"
-  - "JavaBuildpack::Framework::DynaTraceAgent"
-# - "JavaBuildpack::Framework::IntroscopeAgent"
+  - "JavaBuildpack::Framework::DynatraceAppmonAgent"
+  - "JavaBuildpack::Framework::DynatraceOneAgent"
+  - "JavaBuildpack::Framework::ElasticApmAgent"
+  - "JavaBuildpack::Framework::GoogleStackdriverDebugger"
+  - "JavaBuildpack::Framework::GoogleStackdriverProfiler"
+  - "JavaBuildpack::Framework::IntroscopeAgent"
+  - "JavaBuildpack::Framework::JacocoAgent"
+  - "JavaBuildpack::Framework::JavaMemoryAssistant"
   - "JavaBuildpack::Framework::Jmx"
+  - "JavaBuildpack::Framework::JprofilerProfiler"
   - "JavaBuildpack::Framework::JrebelAgent"
-# - "JavaBuildpack::Framework::LunaSecurityProvider"
+  - "JavaBuildpack::Framework::LunaSecurityProvider"
   - "JavaBuildpack::Framework::MariaDbJDBC"
+  - "JavaBuildpack::Framework::MetricWriter"
   - "JavaBuildpack::Framework::NewRelicAgent"
-  - "JavaBuildpack::Framework::PlayFrameworkAutoReconfiguration"
-  - "JavaBuildpack::Framework::PlayFrameworkJPAPlugin"
   - "JavaBuildpack::Framework::PostgresqlJDBC"
-  - "JavaBuildpack::Framework::RuxitAgent"
+  - "JavaBuildpack::Framework::ProtectAppSecurityProvider"
+  - "JavaBuildpack::Framework::RiverbedAppinternalsAgent"
   - "JavaBuildpack::Framework::SpringAutoReconfiguration"
   - "JavaBuildpack::Framework::SpringInsight"
+  - "JavaBuildpack::Framework::SkyWalkingAgent"
   - "JavaBuildpack::Framework::YourKitProfiler"
+  - "JavaBuildpack::Framework::TakipiAgent"
+  - "JavaBuildpack::Framework::JavaSecurity"
   - "JavaBuildpack::Framework::JavaOpts"

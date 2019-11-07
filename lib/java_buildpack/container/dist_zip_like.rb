@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -34,16 +35,17 @@ module JavaBuildpack
 
       # (see JavaBuildpack::Component::BaseComponent#compile)
       def compile
-        start_script(root).chmod 0755
+        start_script(root).chmod 0o755
         augment_classpath_content
       end
 
       # (see JavaBuildpack::Component::BaseComponent#release)
       def release
+        @droplet.environment_variables.add_environment_variable 'JAVA_OPTS', '$JAVA_OPTS'
+
         [
           @droplet.environment_variables.as_env_vars,
           @droplet.java_home.as_env_var,
-          @droplet.java_opts.as_env_var,
           'exec',
           qualify_path(start_script(root), @droplet.root)
         ].flatten.compact.join(' ')
@@ -55,7 +57,7 @@ module JavaBuildpack
       #
       # @return [String] the id of this container
       def id
-        fail "Method 'id' must be defined"
+        raise "Method 'id' must be defined"
       end
 
       # The root directory of the application
@@ -69,20 +71,20 @@ module JavaBuildpack
       #
       # @return [Boolean] whether or not this component supports this application
       def supports?
-        fail "Method 'supports?' must be defined"
+        raise "Method 'supports?' must be defined"
       end
 
       private
 
-      PATTERN_APP_CLASSPATH = /^declare -r app_classpath=\"(.*)\"$/
+      PATTERN_APP_CLASSPATH = /^declare -r app_classpath=\"(.*)\"$/.freeze
 
       PATTERN_CLASSPATH = /^CLASSPATH=(.*)$/.freeze
 
       private_constant :PATTERN_APP_CLASSPATH, :PATTERN_CLASSPATH
 
       def augment_app_classpath(content)
-        additional_classpath = @droplet.additional_libraries.sort.map do |additional_library|
-          "$app_home/#{additional_library.relative_path_from(start_script(root).dirname)}"
+        additional_classpath = (@droplet.additional_libraries + @droplet.root_libraries).sort.map do |library|
+          "$app_home/#{library.relative_path_from(start_script(root).dirname)}"
         end
 
         update_file start_script(root), content,
@@ -90,8 +92,8 @@ module JavaBuildpack
       end
 
       def augment_classpath(content)
-        additional_classpath = @droplet.additional_libraries.sort.map do |additional_library|
-          "$APP_HOME/#{additional_library.relative_path_from(root)}"
+        additional_classpath = (@droplet.additional_libraries + @droplet.root_libraries).sort.map do |library|
+          "$APP_HOME/#{library.relative_path_from(root)}"
         end
 
         update_file start_script(root), content,

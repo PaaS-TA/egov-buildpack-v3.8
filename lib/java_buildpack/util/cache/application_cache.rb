@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,6 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+require 'java_buildpack/logging/logger_factory'
 require 'java_buildpack/util/cache'
 require 'java_buildpack/util/cache/download_cache'
 
@@ -27,11 +29,33 @@ module JavaBuildpack
       # <b>WARNING: This cache should only by used by code run by the +compile+ script</b>
       class ApplicationCache < DownloadCache
 
+        class << self
+
+          # Whether an +ApplicationCache+ can be created
+          #
+          # @return [Boolean] whether an +ApplicationCache+ can be created
+          def available?
+            !application_cache_directory.nil?
+          end
+
+          # The path to the application cache directory if it exists
+          #
+          # @return [void, String] the path to the application cache directory if it exists
+          def application_cache_directory
+            ARGV[1]
+          end
+
+        end
+
         # Creates an instance of the cache that is backed by the the application cache
         def initialize
-          application_cache_directory = ARGV[1]
-          fail 'Application cache directory is undefined' if application_cache_directory.nil?
-          super(Pathname.new(application_cache_directory), CACHED_RESOURCES_DIRECTORY)
+          logger = Logging::LoggerFactory.instance.get_logger ApplicationCache
+
+          raise 'Application cache directory is undefined' unless self.class.available?
+
+          logger.debug { "Application Cache Directory: #{self.class.application_cache_directory}" }
+
+          super(Pathname.new(self.class.application_cache_directory), CACHED_RESOURCES_DIRECTORY)
         end
 
       end

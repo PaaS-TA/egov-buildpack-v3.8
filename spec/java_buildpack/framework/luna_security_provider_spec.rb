@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,7 +20,7 @@ require 'component_helper'
 require 'java_buildpack/framework/luna_security_provider'
 
 describe JavaBuildpack::Framework::LunaSecurityProvider do
-  include_context 'component_helper'
+  include_context 'with component help'
 
   it 'does not detect without luna-n/a service' do
     expect(component.detect).to be_nil
@@ -30,33 +31,32 @@ describe JavaBuildpack::Framework::LunaSecurityProvider do
     before do
       allow(services).to receive(:one_service?).with(/luna/, 'client', 'servers', 'groups').and_return(true)
 
-      allow(services).to receive(:find_service)
-                           .and_return('credentials' => {
-                                         'client'  => {
-                                           'certificate' => "-----BEGIN CERTIFICATE-----\n" \
-                                           "test-client-cert\n-----END CERTIFICATE-----",
-                                           'private-key' => "-----BEGIN RSA PRIVATE KEY-----\n" \
-                                           "test-client-private-key\n-----END RSA PRIVATE KEY-----"
-                                         },
-                                         'servers' => [
-                                           {
-                                             'name'        => 'test-server-1',
-                                             'certificate' => "-----BEGIN CERTIFICATE-----\n" \
-                                             "test-server-1-cert\n-----END CERTIFICATE-----"
-                                           }, {
-                                             'name'        => 'test-server-2',
-                                             'certificate' => "-----BEGIN CERTIFICATE-----\n" \
-                                             "test-server-2-cert\n-----END CERTIFICATE-----"
-                                           }],
-                                         'groups'  => [
-                                           {
-                                             'label'   => 'test-group-1',
-                                             'members' => %w(test-group-1-member-1 test-group-1-member-2)
-                                           }, {
-                                             'label'   => 'test-group-2',
-                                             'members' => %w(test-group-2-member-1 test-group-2-member-2)
-                                           }
-                                         ] })
+      allow(services).to receive(:find_service).and_return(
+        'credentials' => {
+          'client' => {
+            'certificate' => "-----BEGIN CERTIFICATE-----\ntest-client-cert\n-----END CERTIFICATE-----",
+            'private-key' => "-----BEGIN RSA PRIVATE KEY-----\ntest-client-private-key\n-----END RSA PRIVATE KEY-----"
+          },
+          'servers' => [
+            {
+              'name' => 'test-server-1',
+              'certificate' => "-----BEGIN CERTIFICATE-----\ntest-server-1-cert\n-----END CERTIFICATE-----"
+            }, {
+              'name' => 'test-server-2',
+              'certificate' => "-----BEGIN CERTIFICATE-----\ntest-server-2-cert\n-----END CERTIFICATE-----"
+            }
+          ],
+          'groups' => [
+            {
+              'label' => 'test-group-1',
+              'members' => %w[test-group-1-member-1 test-group-1-member-2]
+            }, {
+              'label' => 'test-group-2',
+              'members' => %w[test-group-2-member-1 test-group-2-member-2]
+            }
+          ]
+        }
+      )
     end
 
     it 'detects with luna-n/a service' do
@@ -69,7 +69,6 @@ describe JavaBuildpack::Framework::LunaSecurityProvider do
       component.compile
 
       expect(sandbox + 'Chrystoki.conf').to exist
-      expect(sandbox + 'java.security').to exist
     end
 
     it 'unpacks the luna tar',
@@ -77,9 +76,10 @@ describe JavaBuildpack::Framework::LunaSecurityProvider do
 
       component.compile
 
-      expect(sandbox + 'usr/safenet/lunaclient/lib/libCryptoki2_64.so').to exist
-      expect(sandbox + 'usr/safenet/lunaclient/jsp/lib/stub.file').to exist
-      expect(sandbox + 'usr/safenet/lunaclient/lib/libcklog2.so').not_to exist
+      expect(sandbox + 'libs/64/libCryptoki2.so').to exist
+      expect(sandbox + 'libs/64/libcklog2.so').to exist
+      expect(sandbox + 'jsp/LunaProvider.jar').to exist
+      expect(sandbox + 'jsp/64/libLunaAPI.so').to exist
     end
 
     it 'write certificate files',
@@ -87,15 +87,15 @@ describe JavaBuildpack::Framework::LunaSecurityProvider do
 
       component.compile
 
-      expect(sandbox + 'usr/safenet/lunaclient/cert/client/client-certificate.pem').to exist
-      expect(sandbox + 'usr/safenet/lunaclient/cert/client/client-private-key.pem').to exist
-      expect(sandbox + 'usr/safenet/lunaclient/cert/server/server-certificates.pem').to exist
+      expect(sandbox + 'client-certificate.pem').to exist
+      expect(sandbox + 'client-private-key.pem').to exist
+      expect(sandbox + 'server-certificates.pem').to exist
 
-      check_file_contents(sandbox + 'usr/safenet/lunaclient/cert/client/client-certificate.pem',
+      check_file_contents(sandbox + 'client-certificate.pem',
                           'spec/fixtures/framework_luna_security_provider/client-certificate.pem')
-      check_file_contents(sandbox + 'usr/safenet/lunaclient/cert/client/client-private-key.pem',
+      check_file_contents(sandbox + 'client-private-key.pem',
                           'spec/fixtures/framework_luna_security_provider/client-private-key.pem')
-      check_file_contents(sandbox + 'usr/safenet/lunaclient/cert/server/server-certificates.pem',
+      check_file_contents(sandbox + 'server-certificates.pem',
                           'spec/fixtures/framework_luna_security_provider/server-certificates.pem')
     end
 
@@ -113,25 +113,58 @@ describe JavaBuildpack::Framework::LunaSecurityProvider do
       expect(environment_variables).to include('ChrystokiConfigurationPath=$PWD/.java-buildpack/luna_security_provider')
     end
 
-    it 'updates JAVA_OPTS' do
+    it 'adds security provider',
+       cache_fixture: 'stub-luna-security-provider.tar' do
+
+      component.compile
+      expect(security_providers.last).to eq('com.safenetinc.luna.provider.LunaProvider')
+    end
+
+    it 'adds extension directory' do
       component.release
-      expect(java_opts).to include('-Djava.security.properties=$PWD/.java-buildpack/' \
-                                   'luna_security_provider/java.security')
-      expect(java_opts).to include('-Djava.ext.dirs=$PWD/.test-java-home/lib/ext:$PWD/.java-buildpack/' \
-                                   'luna_security_provider/usr/safenet/lunaclient/jsp/lib')
+
+      expect(extension_directories).to include(droplet.sandbox + 'ext')
     end
 
     context do
-      let(:configuration) { { 'logging_enabled' => true } }
 
-      it 'unpacks the luna tar',
+      let(:java_home_delegate) do
+        delegate = JavaBuildpack::Component::MutableJavaHome.new
+        delegate.root = app_dir + '.test-java-home'
+        delegate.version = JavaBuildpack::Util::TokenizedVersion.new('9.0.0')
+
+        delegate
+      end
+
+      it 'adds JAR to classpath during compile in Java 9',
          cache_fixture: 'stub-luna-security-provider.tar' do
 
         component.compile
 
-        expect(sandbox + 'usr/safenet/lunaclient/lib/libCryptoki2_64.so').to exist
-        expect(sandbox + 'usr/safenet/lunaclient/jsp/lib/stub.file').to exist
-        expect(sandbox + 'usr/safenet/lunaclient/lib/libcklog2.so').to exist
+        expect(root_libraries).to include(droplet.sandbox + 'jsp/LunaProvider.jar')
+      end
+
+      it 'adds JAR to classpath during release in Java 9' do
+        component.release
+
+        expect(root_libraries).to include(droplet.sandbox + 'jsp/LunaProvider.jar')
+      end
+
+      it 'adds does not add extension directory in Java 9' do
+        component.release
+
+        expect(extension_directories).not_to include(droplet.sandbox + 'ext')
+      end
+
+    end
+
+    context do
+      let(:configuration) do
+        {
+          'logging_enabled' => true,
+          'ha_logging_enabled' => true,
+          'tcp_keep_alive_enabled' => false
+        }
       end
 
       it 'writes configuration',
@@ -142,6 +175,26 @@ describe JavaBuildpack::Framework::LunaSecurityProvider do
         expect(sandbox + 'Chrystoki.conf').to exist
         check_file_contents(sandbox + 'Chrystoki.conf',
                             'spec/fixtures/framework_luna_security_provider_logging/Chrystoki.conf')
+      end
+    end
+
+    context do
+      let(:configuration) do
+        {
+          'logging_enabled' => true,
+          'ha_logging_enabled' => true,
+          'tcp_keep_alive_enabled' => true
+        }
+      end
+
+      it 'writes configuration with client tcp keep alive',
+         cache_fixture: 'stub-luna-security-provider.tar' do
+
+        component.compile
+
+        expect(sandbox + 'Chrystoki.conf').to exist
+        check_file_contents(sandbox + 'Chrystoki.conf',
+                            'spec/fixtures/framework_luna_security_provider_tcp_keep_alive/Chrystoki.conf')
       end
     end
 

@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,9 +24,7 @@ module JavaBuildpack
       # Encapsulate inspection and modification of Play dist applications from Play 2.2.0 onwards.
       class Post22Dist < Post22
 
-        alias_method :root, :find_single_directory
-
-        protected :root
+        alias root find_single_directory
 
       end
 

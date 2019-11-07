@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,14 +20,14 @@ require 'component_helper'
 require 'java_buildpack/component/versioned_dependency_component'
 
 describe JavaBuildpack::Component::VersionedDependencyComponent do
-  include_context 'component_helper'
+  include_context 'with component help'
 
   let(:component) { StubVersionedDependencyComponent.new context }
 
   it 'fails if methods are unimplemented' do
-    expect { component.compile }.to raise_error
-    expect { component.release }.to raise_error
-    expect { component.supports? }.to raise_error
+    expect { component.compile }.to raise_error RuntimeError
+    expect { component.release }.to raise_error RuntimeError
+    expect { component.supports? }.to raise_error RuntimeError
   end
 
   context do

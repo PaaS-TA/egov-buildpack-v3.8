@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -56,7 +57,7 @@ module JavaBuildpack
       #
       # @return [Boolean] whether or not this component supports this application
       def supports?
-        fail "Method 'supports?' must be defined"
+        raise "Method 'supports?' must be defined"
       end
 
       # Downloads a given JAR file and stores it.
@@ -71,12 +72,13 @@ module JavaBuildpack
 
       # Downloads a given TAR file and expands it.
       #
+      # @param [Boolean] strip_top_level whether to strip the top-level directory when expanding. Defaults to +true+.
       # @param [Pathname] target_directory the directory to expand the TAR file to.  Defaults to the component's
       #                                    sandbox.
       # @param [String] name an optional name for the download and expansion.  Defaults to +@component_name+.
       # @return [Void]
-      def download_tar(target_directory = @droplet.sandbox, name = @component_name)
-        super(@version, @uri, target_directory, name)
+      def download_tar(strip_top_level = true, target_directory = @droplet.sandbox, name = @component_name)
+        super(@version, @uri, strip_top_level, target_directory, name)
       end
 
       # Downloads a given ZIP file and expands it.

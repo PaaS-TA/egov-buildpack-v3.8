@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,8 +15,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+require 'digest'
 require 'fileutils'
 require 'java_buildpack/util/cache'
+require 'java_buildpack/util/sanitizer'
 
 module JavaBuildpack
   module Util
@@ -25,6 +28,7 @@ module JavaBuildpack
       #
       # Note: this class is thread-safe, however access to the cached files is not
       class CachedFile
+        include JavaBuildpack::Util
 
         # Creates an instance of the cached file.  Files created and expected by this class will all be rooted at
         # +cache_root+.
@@ -33,7 +37,7 @@ module JavaBuildpack
         # @param [String] uri a uri which uniquely identifies the file in the cache
         # @param [Boolean] mutable whether the cached file should be mutable
         def initialize(cache_root, uri, mutable)
-          key            = URI.escape(uri.sanitize_uri, ':/')
+          key            = Digest::SHA256.hexdigest uri.sanitize_uri
           @cached        = cache_root + "#{key}.cached"
           @etag          = cache_root + "#{key}.etag"
           @last_modified = cache_root + "#{key}.last_modified"
@@ -49,8 +53,8 @@ module JavaBuildpack
         # @param [Array] additional_args any additional arguments to be passed to the block
         # @yield [file, additional_args] the cached file and any additional arguments passed in
         # @return [Void]
-        def cached(mode_enc, *additional_args, &block)
-          @cached.open(mode_enc) { |f| block.call f, *additional_args }
+        def cached(mode_enc, *additional_args, &_)
+          @cached.open(mode_enc) { |f| yield f, *additional_args }
         end
 
         # Returns whether or not data is cached.
@@ -72,8 +76,8 @@ module JavaBuildpack
         # @param [Array] additional_args any additional arguments to be passed to the block
         # @yield [file] the etag file
         # @return [Void]
-        def etag(mode_enc, *additional_args, &block)
-          @etag.open(mode_enc) { |f| block.call f, *additional_args }
+        def etag(mode_enc, *additional_args, &_)
+          @etag.open(mode_enc) { |f| yield f, *additional_args }
         end
 
         # Returns whether or not an etag is stored.
@@ -90,8 +94,8 @@ module JavaBuildpack
         # @param [Array] additional_args any additional arguments to be passed to the block
         # @yield [file] the last modified file
         # @return [Void]
-        def last_modified(mode_enc, *additional_args, &block)
-          @last_modified.open(mode_enc) { |f| block.call f, *additional_args }
+        def last_modified(mode_enc, *additional_args, &_)
+          @last_modified.open(mode_enc) { |f| yield f, *additional_args }
         end
 
         # Returns whether or not a last modified time stamp is stored.

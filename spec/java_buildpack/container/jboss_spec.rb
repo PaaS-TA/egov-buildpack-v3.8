@@ -1,18 +1,29 @@
+# frozen_string_literal: true
+
+# Cloud Foundry Java Buildpack
+# Copyright 2013-2019 the original author or authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 require 'spec_helper'
 require 'component_helper'
 require 'java_buildpack/container/jboss'
 
 describe JavaBuildpack::Container::Jboss do
-  include_context 'component_helper'
-
-  let(:component) { StubJboss.new context }
-
-  let(:configuration) { jboss_configuration }
-
-  let(:jboss_configuration) { double('jboss-configuration') }
+  include_context 'with component help'
 
   it 'detects WEB-INF',
-     app_fixture: 'container_jboss' do
+     app_fixture: 'container_tomcat' do
 
     expect(component.detect).to include("jboss=#{version}")
   end
@@ -24,7 +35,7 @@ describe JavaBuildpack::Container::Jboss do
   end
 
   it 'extracts JBoss from a GZipped TAR',
-     app_fixture:   'container_jboss',
+     app_fixture: 'container_tomcat',
      cache_fixture: 'stub-jboss.tar.gz' do
 
     component.compile
@@ -33,7 +44,7 @@ describe JavaBuildpack::Container::Jboss do
   end
 
   it 'manipulates the standalone configuration',
-     app_fixture:   'container_jboss',
+     app_fixture: 'container_tomcat',
      cache_fixture: 'stub-jboss.tar.gz' do
 
     component.compile
@@ -42,12 +53,11 @@ describe JavaBuildpack::Container::Jboss do
     expect(configuration).to exist
 
     contents = configuration.read
-    expect(contents).to include('<socket-binding name="http" port="${http.port}"/>')
-    expect(contents).to include('<virtual-server name="default-host" enable-welcome-root="false">')
+    expect(contents).to include('<!-- <location name="/" handler="welcome-content"/> -->')
   end
 
   it 'creates a "ROOT.war.dodeploy" in the deployments directory',
-     app_fixture:   'container_jboss',
+     app_fixture: 'container_tomcat',
      cache_fixture: 'stub-jboss.tar.gz' do
 
     component.compile
@@ -56,7 +66,7 @@ describe JavaBuildpack::Container::Jboss do
   end
 
   it 'copies only the application files and directories to the ROOT webapp',
-     app_fixture:   'container_jboss',
+     app_fixture: 'container_tomcat',
      cache_fixture: 'stub-jboss.tar.gz' do
 
     FileUtils.touch(app_dir + '.test-file')
@@ -72,15 +82,10 @@ describe JavaBuildpack::Container::Jboss do
   end
 
   it 'returns command',
-     app_fixture: 'container_jboss' do
+     app_fixture: 'container_tomcat' do
 
-    expect(component.release).to eq("#{java_home.as_env_var} JAVA_OPTS=\"test-opt-2 test-opt-1 -Dhttp.port=$PORT\" " \
+    expect(component.release).to eq("test-var-2 test-var-1 JAVA_OPTS=$JAVA_OPTS #{java_home.as_env_var} exec " \
                                         '$PWD/.java-buildpack/jboss/bin/standalone.sh -b 0.0.0.0')
   end
-end
-
-class StubJboss < JavaBuildpack::Container::Jboss
-
-  public :compile, :release, :supports?
 
 end

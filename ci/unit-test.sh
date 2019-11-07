@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,8 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e
+set -euo pipefail
 
+export GEM_HOME=$PWD/gems
 export LANG=en_US.UTF-8
 export LANGUAGE=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
@@ -23,6 +24,6 @@ export LC_ALL=en_US.UTF-8
 eval "$(rbenv init -)"
 
 pushd java-buildpack
-  bundle install
+  bundle install --quiet
   bundle exec rake
 popd

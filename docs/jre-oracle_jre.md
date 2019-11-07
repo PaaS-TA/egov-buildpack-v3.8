@@ -4,11 +4,15 @@ The Oracle JRE provides Java runtimes from [Oracle][] project.  No versions of t
 <table>
   <tr>
     <td><strong>Detection Criterion</strong></td>
-    <td>Unconditional</td>
+    <td>Unconditional.  Existence of a single bound Volume Service will result in Terminal heap dumps being written.
+      <ul>
+        <li>Existence of a Volume Service service is defined as the <a href="http://docs.cloudfoundry.org/devguide/deploy-apps/environment-variable.html#VCAP-SERVICES"><code>VCAP_SERVICES</code></a> payload containing a service who's name, label or tag has <code>heap-dump</code> as a substring.</li>
+      </ul>
+    </td>
   </tr>
   <tr>
     <td><strong>Tags</strong></td>
-    <td><tt>oracle=&lang;version&rang;, open-jdk-like-memory-calculator=&lang;version&rang;</tt></td>
+    <td><tt>oracle=&lang;version&rang;, open-jdk-like-memory-calculator=&lang;version&rang;, jvmkill=&lang;version&rang;</tt></td>
   </tr>
 </table>
 Tags are printed to standard output by the buildpack detect script
@@ -27,13 +31,20 @@ For general information on configuring the buildpack, including how to specify c
 
 The JRE can be configured by modifying the [`config/oracle_jre.yml`][] file in the buildpack fork.  The JRE uses the [`Repository` utility support][repositories] and so it supports the [version syntax][]  defined there.
 
+To use Oracle JRE instead of OpenJDK without forking java-buildpack, set environment variable:
+
+`cf set-env <app_name> JBP_CONFIG_COMPONENTS '{ jres: [ "JavaBuildpack::Jre::OracleJRE" ] }'`
+`cf set-env <app_name> JBP_CONFIG_ORACLE_JRE '{ jre: { repository_root: "<INTERNAL_REPOSITORY_URI>" } }'`
+
+`cf restage <app_name>`
+
 | Name | Description
 | ---- | -----------
-| `memory_sizes` | Optional memory sizes, described below under "Memory Sizes".
-| `memory_heuristics` | Default memory size weightings, described below under "Memory Weightings".
-| `memory_initials` | Initial memory sizes, described below under "Memory Initials".
-| `repository_root` | The URL of the Oracle repository index ([details][repositories]).
-| `version` | The version of Java runtime to use.  Candidate versions can be found in the the repository that you have created to house the JREs. Note: version 1.8.0 and higher require the `memory_sizes` and `memory_heuristics` mappings to specify `metaspace` rather than `permgen`.
+| `jre.repository_root` | The URL of the Oracle repository index ([details][repositories]).
+| `jre.version` | The version of Java runtime to use.  Candidate versions can be found in the the repository that you have created to house the JREs. Note: version 1.8.0 and higher require the `memory_sizes` and `memory_heuristics` mappings to specify `metaspace` rather than `permgen`.
+| `jvmkill.repository_root` | The URL of the `jvmkill` repository index ([details][repositories]).
+| `jvmkill.version` | The version of `jvmkill` to use.  Candidate versions can be found in the listings for [bionic][jvmkill-bionic].
+| `memory_calculator` | Memory calculator defaults, described below under "Memory".
 
 ### Additional Resources
 The JRE can also be configured by overlaying a set of resources on the default distribution. To do this, add files to the `resources/oracle_jre` directory in the buildpack fork.
@@ -43,84 +54,127 @@ To add the JCE Unlimited Strength `local_policy.jar`, add your file to `resource
 
 #### Custom CA Certificates
 To add custom SSL certificates, add your `cacerts` file to `resources/oracle_jre/lib/security/cacerts`.  This file will be overlayed onto the Oracle distribution.
+
+### `jvmkill`
+The `jvmkill` agent runs when an application has experience a resource exhaustion event.  When this event occurs, the agent will print out a histogram of the first 100 largest types by total number of bytes.
+
+```plain
+Resource exhaustion event: the JVM was unable to allocate memory from the heap.
+ResourceExhausted! (1/0)
+| Instance Count | Total Bytes | Class Name                                    |
+| 18273          | 313157136   | [B                                            |
+| 47806          | 7648568     | [C                                            |
+| 14635          | 1287880     | Ljava/lang/reflect/Method;                    |
+| 46590          | 1118160     | Ljava/lang/String;                            |
+| 8413           | 938504      | Ljava/lang/Class;                             |
+| 28573          | 914336      | Ljava/util/concurrent/ConcurrentHashMap$Node; |
+```
+
+It will also print out a summary of all of the memory spaces in the JVM.
+
+```plain
+Memory usage:
+   Heap memory: init 65011712, used 332392888, committed 351797248, max 351797248
+   Non-heap memory: init 2555904, used 63098592, committed 64815104, max 377790464
+Memory pool usage:
+   Code Cache: init 2555904, used 14702208, committed 15007744, max 251658240
+   PS Eden Space: init 16252928, used 84934656, committed 84934656, max 84934656
+   PS Survivor Space: init 2621440, used 0, committed 19398656, max 19398656
+   Compressed Class Space: init 0, used 5249512, committed 5505024, max 19214336
+   Metaspace: init 0, used 43150616, committed 44302336, max 106917888
+   PS Old Gen: init 43515904, used 247459792, committed 247463936, max 247463936
+```
+
+If a [Volume Service][] with the string `heap-dump` in its name or tag is bound to the application, terminal heap dumps will be written with the pattern `<CONTAINER_DIR>/<SPACE_NAME>-<SPACE_ID[0,8]>/<APPLICATION_NAME>-<APPLICATION_ID[0,8]>/<INSTANCE_INDEX>-<TIMESTAMP>-<INSTANCE_ID[0,8]>.hprof`
+
+```plain
+Heapdump written to /var/vcap/data/9ae0b817-1446-4915-9990-74c1bb26f147/pcfdev-space-e91c5c39/java-main-application-892f20ab/0-2017-06-13T18:31:29+0000-7b23124e.hprof
+```
+
 ### Memory
-The total available memory is specified when an application is pushed as part of it's configuration. The Java buildpack uses this value to control the JRE's use of various regions of memory. The JRE memory settings can be influenced by configuring the `memory_sizes`, `memory_heuristics`, `memory_initials` and/or `stack_threads` mappings.
+The total available memory for the application's container is specified when an application is pushed.
+The Java buildpack uses this value to control the JRE's use of various
+regions of memory and logs the JRE memory settings when the application starts or restarts.
+These settings can be influenced by configuring
+the `stack_threads` and/or `class_count` mappings (both part of the `memory_calculator` mapping),
+and/or Java options relating to memory.
 
 Note: If the total available memory is scaled up or down, the Java buildpack will re-calculate the JRE memory settings the next time the application is started.
 
-Note: If setting an initial Stack size, depending on the version of Java and the operating system used by Cloud Foundry the JRE will require a minimum `-Xss` value. This tends to be between `100k` and `250k`.
+#### Total Memory
 
-#### Memory Sizes
-The following optional properties may be specified in the `memory_sizes` mapping.
+The user can change the container's total memory available to influence the JRE memory settings.
+Unless the user specifies the heap size Java option (`-Xmx`), increasing or decreasing the total memory
+available results in the heap size setting increasing or decreasing by a corresponding amount.
 
-| Name | Description
-| ---- | -----------
-| `heap` | The maximum heap size to use. It may be a single value such as `64m` or a range of acceptable values such as `128m..256m`. It is used to calculate the value of the Java command line options `-Xmx` and `-Xms`.
-| `metaspace` | The maximum Metaspace size to use. It is applicable to versions of Oracle from 1.8 onwards. It may be a single value such as `64m` or a range of acceptable values such as `128m..256m`. It is used to calculate the value of the Java command line options `-XX:MaxMetaspaceSize=` and `-XX:MetaspaceSize=`.
-| `native` | The amount of memory to reserve for native memory allocation. It should normally be omitted or specified as a range with no upper bound such as `100m..`. It does not correspond to a switch on the Java command line.
-| `permgen` | The maximum PermGen size to use. It is applicable to versions of Oracle earlier than 1.8. It may be a single value such as `64m` or a range of acceptable values such as `128m..256m`. It is used to calculate the value of the Java command line options `-XX:MaxPermSize=` and `-XX:PermSize=`.
-| `stack` | The stack size to use. It may be a single value such as `2m` or a range of acceptable values such as `2m..4m`. It is used to calculate the value of the Java command line option `-Xss`.
+#### Loaded Classes
 
-Memory sizes together with _memory weightings_ (described in the next section) are used to calculate the amount of memory for each memory type. The calculation is described later.
-
-Memory sizes consist of a non-negative integer followed by a unit (`k` for kilobytes, `m` for megabytes, `g` for gigabytes; the case is not significant). Only the memory size `0` may be specified without a unit.
-
-The above memory size properties may be omitted with an empty value, specified as a single value, or specified as a range. Ranges use the syntax `<lower bound>..<upper bound>`, although either bound may be omitted in which case the defaults of zero and the total available memory are used for the lower bound and upper bound, respectively. Examples of ranges are `100m..200m` (any value between 100 and 200 megabytes, inclusive) and `100m..` (any value greater than or equal to 100 megabytes).
-
-Each form of memory size is equivalent to a range. Omitting a memory size is equivalent to specifying the range `0..`. Specifying a single value is equivalent to specifying the range with that value as both the lower and upper bound, for example `128m` is equivalent to the range `128m..128m`.
-
-#### Memory Weightings
-Memory weightings are configured in the `memory_heuristics` mapping of [`config/oracle_jre.yml`][]. Each weighting is a non-negative number and represents a proportion of the total available memory (represented by the sum of all the weightings). For example, the following weightings:
+The amount of memory that is allocated to metaspace and compressed class space (or, on Java 7, the permanent generation) is calculated from an estimate of the number of classes that will be loaded. The default behaviour is to estimate the number of loaded classes as a fraction of the number of class files in the application.
+If a specific number of loaded classes should be used for calculations, then it should be specified as in the following example:
 
 ```yaml
-memory_heuristics:
-  heap: 15
-  native: 2
-  permgen: 5
-  stack: 1
+class_count: 500
 ```
 
-represent a maximum heap size three times as large as the maximum PermGen size, and so on.
+#### Headroom
 
-Memory weightings are used together with memory ranges to calculate the amount of memory for each memory type, as follows.
-
-#### Memory Initials
-Memory initials are configured in the `memory_initials` mapping of [`config/oracle_jre.yml`][]. Each initial is a percentage of the given type of memory. Valid memory types are `heap`, `permgen`, and `metaspace`. For example, the following initials:
+A percentage of the total memory allocated to the container to be left as headroom and excluded from the memory calculation.
 
 ```yaml
-memory_initials:
-  heap: 50%
-  permgen: 25%
+headroom: 10
 ```
-
-Given a maximum heap (Xmx) of 1G and a maximum permgen (-XX:MaxPermsize) of 256M an initial heap (Xms) of 512M and an initial permgen (-XX:Permsize) of 64M would be used.
-
-If no initial value is specified for a memory type the JVM default will be used.
-
-A value of 100% for each memory types is generally recommended for best performance.  Smaller values will potentially preserve unused system memory for other tenants on the same host.  Using the G1 garbage collector along with aggressive `MinHeapFreeRatio` and `MaxHeapFreeRatio` values the JVM will actually release unused heap back to the system up to the initial value.
 
 #### Stack Threads
 
-The amount of memory that should be allocated to the stack is given as an amount of memory per thread with the command line option `-Xss`. The default behaviour is to use an estimate of the number of threads based on the total memory for the application. If an explicit number of threads should be used for the calculation of stack memory then it should be specified like the following example:
+The amount of memory that should be allocated to stacks is given as an amount of memory per thread with the Java option `-Xss`. If an explicit number of threads should be used for the calculation of stack memory, then it should be specified as in the following example:
 
 ```yaml
 stack_threads: 500
 ```
 
+Note that the default value of 250 threads is optimized for a default Tomcat configuration.  If you are using another container, especially something non-blocking like Netty, it's more appropriate to use a significantly smaller value.  Typically 25 threads would cover the needs of both the server (Netty) and the threads started by the JVM itself.
+
+#### Java Options
+
+If the JRE memory settings need to be fine-tuned, the user can set one or more Java memory options to
+specific values. The heap size can be set explicitly, but changing the value of options other
+than the heap size can also affect the heap size. For example, if the user increases
+the maximum direct memory size from its default value of 10 Mb to 20 Mb, then this will
+reduce the calculated heap size by 10 Mb.
+
 #### Memory Calculation
 Memory calculation happens before every `start` of an application and is performed by an external program, the [Java Buildpack Memory Calculator]. There is no need to `restage` an application after scaling the memory as restarting will cause the memory settings to be recalculated.
 
-The total available memory is allocated into heap, Metaspace or PermGen (depending on the version of Oracle), stack, and native memory types.
+The container's total available memory is allocated into heap, metaspace and compressed class space (or permanent generation for Java 7),
+direct memory, and stack memory settings.
 
-The total available memory is first allocated to each memory type in proportion to its weighting (this is called ‘balancing'). If the resultant size of any memory type lies outside its range, the size is constrained to the range, the constrained size is excluded from the remaining memory, and no further calculation is required for that memory type. The remaining memory is then balanced against the memory types that are left, and the check is repeated until no calculated memory sizes lie outside their ranges. The remaining memory is then allocated to the remaining memory types according to the last balance step. This iteration terminates when none of the sizes of the remaining memory types is constrained by their corresponding ranges.
+The memory calculation is described in more detail in the [Memory Calculator's README].
 
-Termination is guaranteed since there is a finite number of memory types and in each iteration either none of the remaining memory sizes is constrained by the corresponding range and allocation terminates or at least one memory size is constrained by the corresponding range and is omitted from the next iteration.
+The inputs to the memory calculation, except the container's total memory (which is unknown at staging time), are logged during staging, for example:
+```
+Loaded Classes: 13974, Threads: 300, JAVA_OPTS: ''
+```
+
+The container's total memory is logged during `cf push` and `cf scale`, for example:
+```
+     state     since                    cpu    memory       disk         details
+#0   running   2017-04-10 02:20:03 PM   0.0%   896K of 1G   1.3M of 1G
+```
+
+The JRE memory settings are logged when the application is started or re-started, for example:
+```
+JVM Memory Configuration: -XX:MaxDirectMemorySize=10M -XX:MaxMetaspaceSize=99199K \
+    -XX:ReservedCodeCacheSize=240M -XX:CompressedClassSpaceSize=18134K -Xss1M -Xmx368042K
+```
 
 [`config/components.yml`]: ../config/components.yml
 [`config/oracle_jre.yml`]: ../config/oracle_jre.yml
 [Configuration and Extension]: ../README.md#configuration-and-extension
 [Java Buildpack Memory Calculator]: https://github.com/cloudfoundry/java-buildpack-memory-calculator
+[jvmkill-bionic]: https://java-buildpack.cloudfoundry.org/jvmkill/bionic/x86_64/index.yml
+[Memory Calculator's README]: https://github.com/cloudfoundry/java-buildpack-memory-calculator
 [OpenJDK JRE]: jre-open_jdk_jre.md
 [Oracle]: http://www.oracle.com/technetwork/java/index.html
 [repositories]: extending-repositories.md
 [version syntax]: extending-repositories.md#version-syntax-and-ordering
+[Volume Service]: https://docs.cloudfoundry.org/devguide/services/using-vol-services.html

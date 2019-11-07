@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,7 +21,7 @@ require 'java_buildpack/util/filtering_pathname'
 require 'java_buildpack/util/play/post22'
 
 describe JavaBuildpack::Util::Play::Post22 do
-  include_context 'component_helper'
+  include_context 'with component help'
 
   let(:play_app) { described_class.new(droplet) }
 
@@ -47,24 +48,8 @@ describe JavaBuildpack::Util::Play::Post22 do
     end
 
     it 'returns command' do
-      expect(play_app.release).to eq("test-var-2 test-var-1 PATH=#{java_home.root}/bin:$PATH #{java_home.as_env_var} " \
-      'exec $PWD/bin/play-application -Jtest-opt-2 -Jtest-opt-1 -J-Dhttp.port=$PORT')
-    end
-
-    context do
-      let(:java_opts) { super() << '-Xmx30m -Xms30m' }
-
-      it 'does not allow multiple options in a single JAVA_OPTS array entry' do
-        expect { play_app.release }.to raise_error(/Invalid Java option contains more than one option/)
-      end
-    end
-
-    context do
-      let(:java_opts) { super() << '$CALCULATED_MEMORY' }
-
-      it 'does wraps the output of CALCULATED_MEMORY correctly' do
-        expect(play_app.release).to include('${CALCULATED_MEMORY//-/-J-}')
-      end
+      expect(play_app.release).to eq('test-var-2 test-var-1 PATH=$PWD/.test-java-home/bin:$PATH ' \
+      "#{java_home.as_env_var} exec $PWD/bin/play-application $(for I in $JAVA_OPTS ; do echo \"-J$I\" ; done)")
     end
 
     context do

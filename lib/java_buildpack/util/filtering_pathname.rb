@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -55,7 +56,7 @@ module JavaBuildpack
       #         +false+ (to filter out the pathname).  Defaults to keeping everything
       # @param [Boolean] mutable +true+ if and only if the +FilteringPathname+ may be used to mutate the file system
       def initialize(pathname, filter, mutable)
-        fail 'Non-absolute pathname' unless pathname.absolute?
+        raise 'Non-absolute pathname' unless pathname.absolute?
 
         @pathname = pathname
         @filter   = filter
@@ -142,23 +143,23 @@ module JavaBuildpack
         end
       end
 
-      attr_reader :pathname
+      protected
 
-      protected :pathname
+      attr_reader :pathname
 
       private
 
-      MUTATORS = [:chmod, :chown, :delete, :lchmod, :lchown, :make_link, :make_symlink, :mkdir, :mkpath, :rename,
-                  :rmdir, :rmtree, :taint, :unlink, :untaint].to_set.freeze
+      MUTATORS = %i[chmod chown delete lchmod lchown make_link make_symlink mkdir mkpath rename rmdir rmtree taint
+                    unlink untaint].to_set.freeze
 
       private_constant :MUTATORS
 
       def check_file_does_not_exist(file)
-        fail "#{file} should not exist" if file.exist?
+        raise "#{file} should not exist" if file.exist?
       end
 
       def check_mutable
-        fail 'FilteringPathname is immutable' unless @mutable
+        raise 'FilteringPathname is immutable' unless @mutable
       end
 
       def comparison_target(other)
@@ -198,14 +199,14 @@ module JavaBuildpack
 
       def method_missing(method, *args)
         check_mutable if MUTATORS.member? method
-        if block_given?
-          result = delegate.send(method, *args) do |*values|
-            converted_values = values.map { |value| convert_if_necessary(value) }.compact
-            yield(*converted_values) unless converted_values.empty?
-          end
-        else
-          result = delegate.send(method, *args)
-        end
+        result = if block_given?
+                   delegate.send(method, *args) do |*values|
+                     converted_values = values.map { |value| convert_if_necessary(value) }.compact
+                     yield(*converted_values) unless converted_values.empty?
+                   end
+                 else
+                   delegate.send(method, *args)
+                 end
         convert_result_if_necessary(result)
       end
 
@@ -222,7 +223,8 @@ module JavaBuildpack
       end
 
       def filter(pathname)
-        fail 'Non-absolute pathname' unless pathname.absolute?
+        raise 'Non-absolute pathname' unless pathname.absolute?
+
         @filter.call(pathname.cleanpath)
       end
 

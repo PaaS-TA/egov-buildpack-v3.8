@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,11 +27,12 @@ module JavaBuildpack
 
       # (see JavaBuildpack::Component::BaseComponent#detect)
       def detect
-        enabled? ? "#{Debug.to_s.dash_case}=#{port}" : nil
+        enabled? ? "#{self.class.to_s.dash_case}=#{port}" : nil
       end
 
       # (see JavaBuildpack::Component::BaseComponent#compile)
       def compile
+        puts "#{'----->'.red.bold} #{'Debugging'.blue.bold} enabled on port #{port}#{suspend_message}"
       end
 
       # (see JavaBuildpack::Component::BaseComponent#release)
@@ -54,6 +56,10 @@ module JavaBuildpack
 
       def suspend
         @configuration['suspend'] ? 'y' : 'n'
+      end
+
+      def suspend_message
+        ', suspended on start' if @configuration['suspend']
       end
 
     end

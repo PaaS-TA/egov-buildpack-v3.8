@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e
+set -euo pipefail
 
 pushd upstream
   COMMIT=$(git rev-parse HEAD)
@@ -23,8 +23,8 @@ popd
 git clone downstream merged
 
 pushd merged
-  git config --local user.name "Spring Buildmaster"
-  git config --local user.email "buildmaster@springframework.org"
+  git config --local user.name "$GIT_USER_NAME"
+  git config --local user.email $GIT_USER_EMAIL
 
   git remote add upstream ../upstream
   git fetch upstream --no-tags

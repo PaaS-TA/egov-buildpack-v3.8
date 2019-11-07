@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,20 +22,21 @@ require 'logging_helper'
 require 'java_buildpack/util/cache/application_cache'
 
 describe JavaBuildpack::Util::Cache::ApplicationCache do
-  include_context 'application_helper'
-  include_context 'internet_availability_helper'
-  include_context 'logging_helper'
+  include_context 'with application help'
+  include_context 'with internet availability help'
+  include_context 'with logging help'
 
   previous_arg_value = ARGV[1]
 
   before do
     ARGV[1] = nil
 
-    stub_request(:get, 'http://foo-uri/').with(headers: { 'Accept' => '*/*', 'User-Agent' => 'Ruby' })
+    stub_request(:get, 'http://foo-uri/')
+      .with(headers: { 'Accept' => '*/*', 'User-Agent' => 'Ruby' })
       .to_return(status: 200, body: 'foo-cached', headers: { Etag: 'foo-etag', 'Last-Modified' => 'foo-last-modified' })
 
     stub_request(:head, 'http://foo-uri/')
-      .with(headers: { 'Accept'     => '*/*', 'If-Modified-Since' => 'foo-last-modified', 'If-None-Match' => 'foo-etag',
+      .with(headers: { 'Accept' => '*/*', 'If-Modified-Since' => 'foo-last-modified', 'If-None-Match' => 'foo-etag',
                        'User-Agent' => 'Ruby' })
       .to_return(status: 304, body: '', headers: {})
   end
@@ -44,7 +46,7 @@ describe JavaBuildpack::Util::Cache::ApplicationCache do
   end
 
   it 'raises an error if ARGV[1] is not defined' do
-    expect { described_class.new }.to raise_error
+    expect { described_class.new }.to raise_error RuntimeError
   end
 
   it 'uses ARGV[1] directory' do

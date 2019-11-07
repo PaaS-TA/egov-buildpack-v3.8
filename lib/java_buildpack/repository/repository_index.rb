@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,8 +18,7 @@
 require 'java_buildpack/logging/logger_factory'
 require 'java_buildpack/repository'
 require 'java_buildpack/repository/version_resolver'
-require 'java_buildpack/util/cache'
-require 'java_buildpack/util/cache/download_cache'
+require 'java_buildpack/util/cache/cache_factory'
 require 'java_buildpack/util/configuration_utils'
 require 'rbconfig'
 require 'yaml'
@@ -36,7 +36,7 @@ module JavaBuildpack
         @logger = JavaBuildpack::Logging::LoggerFactory.instance.get_logger RepositoryIndex
 
         @default_repository_root = JavaBuildpack::Util::ConfigurationUtils.load('repository')['default_repository_root']
-                                     .chomp('/')
+                                                                          .chomp('/')
 
         cache.get("#{canonical repository_root}#{INDEX_PATH}") do |file|
           @index = YAML.load_file(file)
@@ -51,14 +51,15 @@ module JavaBuildpack
       # @return [String] the URI of the file found
       def find_item(version)
         found_version = VersionResolver.resolve(version, @index.keys)
-        fail "No version resolvable for '#{version}' in #{@index.keys.join(', ')}" if found_version.nil?
+        raise "No version resolvable for '#{version}' in #{@index.keys.join(', ')}" if found_version.nil?
+
         uri = @index[found_version.to_s]
         [found_version, uri]
       end
 
       private
 
-      INDEX_PATH = '/index.yml'.freeze
+      INDEX_PATH = '/index.yml'
 
       private_constant :INDEX_PATH
 
@@ -67,16 +68,15 @@ module JavaBuildpack
       end
 
       def cache
-        JavaBuildpack::Util::Cache::DownloadCache.new(Pathname.new(Dir.tmpdir),
-                                                      JavaBuildpack::Util::Cache::CACHED_RESOURCES_DIRECTORY)
+        JavaBuildpack::Util::Cache::CacheFactory.create
       end
 
       def canonical(raw)
         cooked = raw
-                   .gsub(/\{default.repository.root\}/, @default_repository_root)
-                   .gsub(/\{platform\}/, platform)
-                   .gsub(/\{architecture\}/, architecture)
-                   .chomp('/')
+                 .gsub(/\{default.repository.root\}/, @default_repository_root)
+                 .gsub(/\{platform\}/, platform)
+                 .gsub(/\{architecture\}/, architecture)
+                 .chomp('/')
         @logger.debug { "#{raw} expanded to #{cooked}" }
         cooked
       end
@@ -92,7 +92,7 @@ module JavaBuildpack
         elsif !`which lsb_release 2> /dev/null`.empty?
           `lsb_release -cs`.strip
         else
-          fail 'Unable to determine platform'
+          raise 'Unable to determine platform'
         end
       end
 

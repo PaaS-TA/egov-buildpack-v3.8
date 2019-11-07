@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,11 +20,11 @@ require 'component_helper'
 require 'java_buildpack/framework/app_dynamics_agent'
 
 describe JavaBuildpack::Framework::AppDynamicsAgent do
-  include_context 'component_helper'
+  include_context 'with component help'
 
   let(:configuration) do
-    { 'default_tier_name'        => nil,
-      'default_node_name'        => "$(expr \"$VCAP_APPLICATION\" : '.*instance_index[\": ]*\\([[:digit:]]*\\).*')",
+    { 'default_tier_name' => nil,
+      'default_node_name' => "$(expr \"$VCAP_APPLICATION\" : '.*instance_index[\": ]*\\([[:digit:]]*\\).*')",
       'default_application_name' => nil }
   end
 

@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +17,8 @@
 
 require 'fileutils'
 require 'java_buildpack/component'
-require 'java_buildpack/util/cache/application_cache'
+require 'java_buildpack/util/cache/cache_factory'
+require 'java_buildpack/util/colorize'
 require 'java_buildpack/util/format_duration'
 require 'java_buildpack/util/shell'
 require 'java_buildpack/util/space_case'
@@ -50,7 +52,7 @@ module JavaBuildpack
       #                                      an +Array<String>+ that uniquely identifies the component (e.g.
       #                                      +open_jdk=1.7.0_40+).  Otherwise, +nil+.
       def detect
-        fail "Method 'detect' must be defined"
+        raise "Method 'detect' must be defined"
       end
 
       # Modifies the application's file system.  The component is expected to transform the application's file system in
@@ -59,7 +61,7 @@ module JavaBuildpack
       #
       # @return [Void]
       def compile
-        fail "Method 'compile' must be defined"
+        raise "Method 'compile' must be defined"
       end
 
       # Modifies the application's runtime configuration. The component is expected to transform members of the
@@ -73,7 +75,7 @@ module JavaBuildpack
       #                        Container and JRE components are expected to return a command required to run the
       #                        application.
       def release
-        fail "Method 'release' must be defined"
+        raise "Method 'release' must be defined"
       end
 
       protected
@@ -87,10 +89,15 @@ module JavaBuildpack
       # @return [Void]
       def download(version, uri, name = @component_name)
         download_start_time = Time.now
-        print "-----> Downloading #{name} #{version} from #{uri.sanitize_uri} "
+        print "#{'----->'.red.bold} Downloading #{name.blue.bold} #{version.to_s.blue} from #{uri.sanitize_uri} "
 
-        JavaBuildpack::Util::Cache::ApplicationCache.new.get(uri) do |file, downloaded|
-          puts downloaded ? "(#{(Time.now - download_start_time).duration})" : '(found in cache)'
+        JavaBuildpack::Util::Cache::CacheFactory.create.get(uri) do |file, downloaded|
+          if downloaded
+            puts "(#{(Time.now - download_start_time).duration})".green.italic
+          else
+            puts '(found in cache)'.green.italic
+          end
+
           yield file
         end
       end
@@ -114,21 +121,26 @@ module JavaBuildpack
       #
       # @param [String] version the version of the download
       # @param [String] uri the uri of the download
+      # @param [Boolean] strip_top_level whether to strip the top-level directory when expanding. Defaults to +true+.
       # @param [Pathname] target_directory the directory to expand the TAR file to.  Defaults to the component's
       #                                    sandbox.
       # @param [String] name an optional name for the download and expansion.  Defaults to +@component_name+.
       # @return [Void]
-      def download_tar(version, uri, target_directory = @droplet.sandbox, name = @component_name)
+      def download_tar(version, uri, strip_top_level = true, target_directory = @droplet.sandbox,
+                       name = @component_name)
         download(version, uri, name) do |file|
           with_timing "Expanding #{name} to #{target_directory.relative_path_from(@droplet.root)}" do
             FileUtils.mkdir_p target_directory
-            shell "tar x#{compression_flag(file)}f #{file.path} -C #{target_directory} --strip 1 2>&1"
+            shell "tar x#{compression_flag(file)}f #{file.path} -C #{target_directory} " \
+                  "#{'--strip 1' if strip_top_level} 2>&1"
           end
         end
       end
 
       # Downloads a given ZIP file and expands it.
       #
+      # @param [String] version the version of the download
+      # @param [String] uri the uri of the download
       # @param [Boolean] strip_top_level whether to strip the top-level directory when expanding. Defaults to +true+.
       # @param [Pathname] target_directory the directory to expand the ZIP file to.  Defaults to the component's
       #                                    sandbox.
@@ -157,13 +169,13 @@ module JavaBuildpack
       #
       # @param [String] caption the caption to print when timing starts
       # @return [Void]
-      def with_timing(caption)
+      def with_timing(caption, include_arrow = false)
         start_time = Time.now
-        print "       #{caption} "
+        print "#{include_arrow ? '----->'.red.bold : '      '} #{caption} "
 
         yield
 
-        puts "(#{(Time.now - start_time).duration})"
+        puts "(#{(Time.now - start_time).duration})".green.italic
       end
 
       private

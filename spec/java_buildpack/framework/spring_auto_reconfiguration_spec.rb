@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,10 +18,9 @@
 require 'spec_helper'
 require 'component_helper'
 require 'java_buildpack/framework/spring_auto_reconfiguration'
-require 'java_buildpack/framework/spring_auto_reconfiguration/web_xml_modifier'
 
 describe JavaBuildpack::Framework::SpringAutoReconfiguration do
-  include_context 'component_helper'
+  include_context 'with component help'
 
   let(:configuration) { { 'enabled' => true } }
 
@@ -51,7 +51,7 @@ describe JavaBuildpack::Framework::SpringAutoReconfiguration do
   end
 
   it 'downloads additional libraries',
-     app_fixture:   'framework_auto_reconfiguration_servlet_3',
+     app_fixture: 'framework_auto_reconfiguration_servlet_3',
      cache_fixture: 'stub-auto-reconfiguration.jar' do
 
     component.compile
@@ -60,34 +60,12 @@ describe JavaBuildpack::Framework::SpringAutoReconfiguration do
   end
 
   it 'adds to additional libraries',
-     app_fixture:   'framework_auto_reconfiguration_servlet_3',
+     app_fixture: 'framework_auto_reconfiguration_servlet_3',
      cache_fixture: 'stub-auto-reconfiguration.jar' do
 
     component.release
 
     expect(additional_libraries).to include(sandbox + "spring_auto_reconfiguration-#{version}.jar")
-  end
-
-  context do
-
-    let(:web_xml_modifier) { double('WebXmlModifier') }
-
-    before do
-      allow(JavaBuildpack::Framework::WebXmlModifier).to receive(:new).and_return(web_xml_modifier)
-      expect(web_xml_modifier).to receive(:augment_root_context)
-      expect(web_xml_modifier).to receive(:augment_servlet_contexts)
-      allow(web_xml_modifier).to receive(:to_s).and_return('Test Content')
-    end
-
-    it 'updates web.xml if it exists',
-       app_fixture:   'framework_auto_reconfiguration_servlet_2',
-       cache_fixture: 'stub-auto-reconfiguration.jar' do
-
-      component.compile
-
-      expect((app_dir + 'WEB-INF/web.xml').read).to eq('Test Content')
-    end
-
   end
 
 end

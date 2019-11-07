@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -33,13 +34,15 @@ task :check_api_doc do
   abort "\nFailed due to undocumented public API:\n\n#{output}" if output !~ /100.00% documented/
 end
 
-$LOAD_PATH.unshift File.expand_path('..', __FILE__)
+$LOAD_PATH.unshift File.expand_path(__dir__)
 require 'rakelib/dependency_cache_task'
 require 'rakelib/stage_buildpack_task'
 require 'rakelib/package_task'
+require 'rakelib/versions_task'
 Package::DependencyCacheTask.new
-Package::StageBuildpackTask.new(Dir['bin/**/*', 'config/**/*', 'lib/**/*', 'resources/**/*']
+Package::StageBuildpackTask.new(Dir['bin/**/*', 'config/**/*', 'lib/**/*', 'resources/**/*', 'LICENSE', 'NOTICE']
                                   .reject { |f| File.directory? f })
 Package::PackageTask.new
+Package::VersionsTask.new
 
-task default: %w(rubocop check_api_doc spec)
+task default: %w[rubocop check_api_doc spec]

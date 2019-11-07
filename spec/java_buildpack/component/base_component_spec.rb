@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,7 +20,7 @@ require 'component_helper'
 require 'java_buildpack/component/base_component'
 
 describe JavaBuildpack::Component::BaseComponent do
-  include_context 'component_helper'
+  include_context 'with component help'
 
   let(:component) { StubBaseComponent.new context }
 
@@ -40,9 +41,9 @@ describe JavaBuildpack::Component::BaseComponent do
   end
 
   it 'fails if methods are unimplemented' do
-    expect { component.detect }.to raise_error
-    expect { component.compile }.to raise_error
-    expect { component.release }.to raise_error
+    expect { component.detect }.to raise_error RuntimeError
+    expect { component.compile }.to raise_error RuntimeError
+    expect { component.release }.to raise_error RuntimeError
   end
 
   it 'downloads file and yield it',

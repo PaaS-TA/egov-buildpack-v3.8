@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,18 +17,19 @@
 
 require 'spec_helper'
 require 'application_helper'
+require 'digest'
 require 'fileutils'
 require 'java_buildpack/util/cache/cached_file'
 
 describe JavaBuildpack::Util::Cache::CachedFile do
-  include_context 'application_helper'
+  include_context 'with application help'
 
   let(:cache_root) { app_dir + 'cache/root' }
 
   let(:file_cache) { described_class.new(app_dir, 'http://foo-uri/', true) }
 
   it 'does not create any files on initialization' do
-    %w(cached etag last_modified).each { |extension| expect(cache_file(extension)).not_to exist }
+    %w[cached etag last_modified].each { |extension| expect(cache_file(extension)).not_to exist }
   end
 
   it 'creates cache_root if mutable' do
@@ -47,15 +49,15 @@ describe JavaBuildpack::Util::Cache::CachedFile do
   end
 
   it 'does not detect cached file' do
-    expect(file_cache.cached?).not_to be
+    expect(file_cache).not_to be_cached
   end
 
   it 'does not detect etag file' do
-    expect(file_cache.etag?).not_to be
+    expect(file_cache).not_to be_etag
   end
 
   it 'does not detect last_modified file' do
-    expect(file_cache.last_modified?).not_to be
+    expect(file_cache).not_to be_last_modified
   end
 
   context do
@@ -71,19 +73,19 @@ describe JavaBuildpack::Util::Cache::CachedFile do
     end
 
     it 'detects cached file' do
-      expect(file_cache.cached?).to be
+      expect(file_cache).to be_cached
     end
 
     it 'destroys all files' do
       file_cache.destroy
 
-      %w(cached etag last_modified).each { |extension| expect(cache_file(extension)).not_to exist }
+      %w[cached etag last_modified].each { |extension| expect(cache_file(extension)).not_to exist }
     end
 
     it 'does not destroy all files if immutable' do
       described_class.new(app_dir, 'http://foo-uri/', false).destroy
 
-      %w(cached etag last_modified).each { |extension| expect(cache_file(extension)).to exist }
+      %w[cached etag last_modified].each { |extension| expect(cache_file(extension)).to exist }
     end
 
     it 'calls the block with the content of the etag file' do
@@ -91,7 +93,7 @@ describe JavaBuildpack::Util::Cache::CachedFile do
     end
 
     it 'detects etag file' do
-      expect(file_cache.etag?).to be
+      expect(file_cache).to be_etag
     end
 
     it 'calls the block with the content of the last_modified file' do
@@ -100,12 +102,12 @@ describe JavaBuildpack::Util::Cache::CachedFile do
     end
 
     it 'detects last_modified file' do
-      expect(file_cache.last_modified?).to be
+      expect(file_cache).to be_last_modified
     end
   end
 
   def cache_file(extension)
-    app_dir + "http%3A%2F%2Ffoo-uri%2F.#{extension}"
+    app_dir + "#{Digest::SHA256.hexdigest('http://foo-uri/')}.#{extension}"
   end
 
   def touch(extension, content = '')

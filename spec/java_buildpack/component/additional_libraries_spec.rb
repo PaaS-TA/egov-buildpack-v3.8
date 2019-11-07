@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,7 +20,7 @@ require 'droplet_helper'
 require 'java_buildpack/component/additional_libraries'
 
 describe JavaBuildpack::Component::AdditionalLibraries do
-  include_context 'droplet_helper'
+  include_context 'with droplet help'
 
   context do
 
@@ -46,21 +47,21 @@ describe JavaBuildpack::Component::AdditionalLibraries do
 
   it 'renders empty string if classpath is empty' do
     additional_libraries.clear
-    expect(additional_libraries.as_classpath).not_to be
+    expect(additional_libraries.as_classpath).not_to be_truthy
   end
 
   it 'symbolically links additional libraries' do
     additional_libraries.link_to app_dir
 
-    test_jar_1 = app_dir + 'test-jar-1.jar'
-    test_jar_2 = app_dir + 'test-jar-2.jar'
-    expect(test_jar_1).to exist
-    expect(test_jar_1).to be_symlink
-    expect(test_jar_1.readlink).to eq((additional_libs_directory + 'test-jar-1.jar').relative_path_from(app_dir))
+    test_jar1 = app_dir + 'test-jar-1.jar'
+    test_jar2 = app_dir + 'test-jar-2.jar'
+    expect(test_jar1).to exist
+    expect(test_jar1).to be_symlink
+    expect(test_jar1.readlink).to eq((additional_libs_directory + 'test-jar-1.jar').relative_path_from(app_dir))
 
-    expect(test_jar_2).to exist
-    expect(test_jar_2).to be_symlink
-    expect(test_jar_2.readlink).to eq((additional_libs_directory + 'test-jar-2.jar').relative_path_from(app_dir))
+    expect(test_jar2).to exist
+    expect(test_jar2).to be_symlink
+    expect(test_jar2.readlink).to eq((additional_libs_directory + 'test-jar-2.jar').relative_path_from(app_dir))
   end
 
 end

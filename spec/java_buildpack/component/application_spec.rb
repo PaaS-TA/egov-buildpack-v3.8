@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,7 +21,7 @@ require 'fileutils'
 require 'java_buildpack/component/application'
 
 describe JavaBuildpack::Component::Application do
-  include_context 'application_helper'
+  include_context 'with application help'
 
   it 'returns a parsed version of VCAP_APPLICATION as details' do
     expect(application.details).to eq(vcap_application)
@@ -69,7 +70,7 @@ describe JavaBuildpack::Component::Application do
   end
 
   it 'returns a parsed version of VCAP_SERVICES as services' do
-    expect(application.services.find_service(/test-service/)).to be
+    expect(application.services.find_service(/test-service/)).to be_truthy
   end
 
 end

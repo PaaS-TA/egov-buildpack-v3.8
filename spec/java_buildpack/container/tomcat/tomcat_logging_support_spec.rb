@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,7 +20,7 @@ require 'component_helper'
 require 'java_buildpack/container/tomcat/tomcat_logging_support'
 
 describe JavaBuildpack::Container::TomcatLoggingSupport do
-  include_context 'component_helper'
+  include_context 'with component help'
 
   let(:component_id) { 'tomcat' }
 
@@ -32,11 +33,15 @@ describe JavaBuildpack::Container::TomcatLoggingSupport do
 
     component.compile
 
-    expect(sandbox + "endorsed/tomcat_logging_support-#{version}.jar").to exist
+    expect(sandbox + "bin/tomcat_logging_support-#{version}.jar").to exist
   end
 
-  it 'does nothing during release' do
-    component.release
+  it 'downloads JAR',
+     cache_fixture: 'stub-logging-support.jar' do
+
+    component.compile
+
+    expect(droplet.root_libraries).to include(sandbox + "bin/tomcat_logging_support-#{version}.jar")
   end
 
 end

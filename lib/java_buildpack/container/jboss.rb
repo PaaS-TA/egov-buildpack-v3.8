@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -31,16 +32,22 @@ module JavaBuildpack
         download_tar
         update_configuration
         copy_application
+        copy_additional_libraries
         create_dodeploy
       end
 
       # (see JavaBuildpack::Component::BaseComponent#release)
       def release
-        @droplet.java_opts.add_system_property 'http.port', '$PORT'
+        @droplet.environment_variables.add_environment_variable 'JAVA_OPTS', '$JAVA_OPTS'
+        @droplet.java_opts
+                .add_system_property('jboss.http.port', '$PORT')
+                .add_system_property('java.net.preferIPv4Stack', true)
+                .add_system_property('java.net.preferIPv4Addresses', true)
 
         [
+          @droplet.environment_variables.as_env_vars,
           @droplet.java_home.as_env_var,
-          @droplet.java_opts.as_env_var,
+          'exec',
           "$PWD/#{(@droplet.sandbox + 'bin/standalone.sh').relative_path_from(@droplet.root)}",
           '-b',
           '0.0.0.0'
@@ -61,6 +68,11 @@ module JavaBuildpack
         @application.root.children.each { |child| FileUtils.cp_r child, root }
       end
 
+      def copy_additional_libraries
+        web_inf_lib = root + 'WEB-INF/lib'
+        @droplet.additional_libraries.each { |additional_library| FileUtils.cp_r additional_library, web_inf_lib }
+      end
+
       def create_dodeploy
         FileUtils.touch(webapps + 'ROOT.war.dodeploy')
       end
@@ -73,10 +85,8 @@ module JavaBuildpack
         standalone_config = @droplet.sandbox + 'standalone/configuration/standalone.xml'
 
         modified = standalone_config.read
-                     .gsub(/<virtual-server name="default-host" enable-welcome-root="true">/,
-                           '<virtual-server name="default-host" enable-welcome-root="false">')
-                     .gsub(/<socket-binding name="http" port="8080"\/>/,
-                           '<socket-binding name="http" port="${http.port}"/>')
+                                    .gsub(%r{<location name="/" handler="welcome-content"/>},
+                                          '<!-- <location name="/" handler="welcome-content"/> -->')
 
         standalone_config.open('w') { |f| f.write modified }
       end

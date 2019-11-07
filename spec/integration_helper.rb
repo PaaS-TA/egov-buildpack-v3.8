@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,10 +21,10 @@ require 'console_helper'
 require 'logging_helper'
 require 'open3'
 
-shared_context 'integration_helper' do
-  include_context 'application_helper'
-  include_context 'console_helper'
-  include_context 'logging_helper'
+shared_context 'with integration help' do
+  include_context 'with application help'
+  include_context 'with console help'
+  include_context 'with logging help'
 
   let(:buildpack_dir) { Pathname.new Dir.mktmpdir }
 
@@ -32,7 +33,7 @@ shared_context 'integration_helper' do
   end
 
   before do |example|
-    %w(bin config lib resources).each { |dir| FileUtils.cp_r dir, buildpack_dir }
+    %w[bin config lib resources].each { |dir| FileUtils.cp_r dir, buildpack_dir }
 
     buildpack_fixture = example.metadata[:buildpack_fixture]
     FileUtils.cp_r "spec/fixtures/#{buildpack_fixture.chomp}/.", buildpack_dir if buildpack_fixture

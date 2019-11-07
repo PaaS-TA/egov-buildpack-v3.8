@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,8 +22,8 @@ require 'internet_availability_helper'
 require 'java_buildpack/framework/spring_insight'
 
 describe JavaBuildpack::Framework::SpringInsight do
-  include_context 'component_helper'
-  include_context 'internet_availability_helper'
+  include_context 'with component help'
+  include_context 'with internet availability help'
 
   it 'does not detect without spring-insight-n/a service' do
     expect(component.detect).to be_nil
@@ -32,18 +33,20 @@ describe JavaBuildpack::Framework::SpringInsight do
 
     before do
       allow(services).to receive(:one_service?)
-                           .with(/p-insight/, 'agent_download_url', 'service_instance_id').and_return(true)
-      allow(services).to receive(:find_service)
-                           .and_return('label'       => 'p-insight',
-                                       'credentials' => {
-                                         'version'             => '2.0.0',
-                                         'agent_download_url'  => 'test-uri/services/config/agent-download',
-                                         'agent_password'      => 'foo',
-                                         'agent_username'      => 'bar',
-                                         'service_instance_id' => '12345' })
+        .with(/p-insight/, 'agent_download_url', 'service_instance_id').and_return(true)
+      allow(services).to receive(:find_service).and_return(
+        'label' => 'p-insight',
+        'credentials' => {
+          'version' => '2.0.0',
+          'agent_download_url' => 'test-uri/services/config/agent-download',
+          'agent_password' => 'foo',
+          'agent_username' => 'bar',
+          'service_instance_id' => '12345'
+        }
+      )
       allow(application_cache).to receive(:get)
-                                    .with('test-uri/services/config/agent-download')
-                                    .and_yield(Pathname.new('spec/fixtures/stub-insight-agent.jar').open, false)
+        .with('test-uri/services/config/agent-download')
+        .and_yield(Pathname.new('spec/fixtures/stub-insight-agent.jar').open, false)
     end
 
     it 'does detect with spring-insight-n/a service' do
@@ -83,19 +86,21 @@ describe JavaBuildpack::Framework::SpringInsight do
 
     it 'does extract Spring Insight from the Uber Agent zip file and copy the ActiveMQ plugin' do
       allow(services).to receive(:one_service?)
-                           .with(/p-insight/, 'agent_download_url', 'service_instance_id').and_return(true)
-      allow(services).to receive(:find_service)
-                           .and_return('label'       => 'p-insight',
-                                       'credentials' => {
-                                         'version'             => '2.0.0',
-                                         'agent_download_url'  => 'test-uri/services/config/agent-download',
-                                         'agent_password'      => 'foo',
-                                         'agent_username'      => 'bar',
-                                         'service_instance_id' => '12345',
-                                         'agent_transport'     => 'activemq' })
+        .with(/p-insight/, 'agent_download_url', 'service_instance_id').and_return(true)
+      allow(services).to receive(:find_service).and_return(
+        'label' => 'p-insight',
+        'credentials' => {
+          'version' => '2.0.0',
+          'agent_download_url' => 'test-uri/services/config/agent-download',
+          'agent_password' => 'foo',
+          'agent_username' => 'bar',
+          'service_instance_id' => '12345',
+          'agent_transport' => 'activemq'
+        }
+      )
       allow(application_cache).to receive(:get)
-                                    .with('test-uri/services/config/agent-download')
-                                    .and_yield(Pathname.new('spec/fixtures/stub-insight-agent.jar').open, false)
+        .with('test-uri/services/config/agent-download')
+        .and_yield(Pathname.new('spec/fixtures/stub-insight-agent.jar').open, false)
 
       component.compile
 

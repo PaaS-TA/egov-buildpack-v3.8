@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,12 +20,12 @@ require 'component_helper'
 require 'java_buildpack/component/modular_component'
 
 describe JavaBuildpack::Component::ModularComponent do
-  include_context 'component_helper'
+  include_context 'with component help'
 
   let(:component) { StubModularComponent.new context }
 
   it 'fails if supports? is unimplemented' do
-    expect { component.supports? }.to raise_error
+    expect { component.supports? }.to raise_error RuntimeError
   end
 
   context do
@@ -38,14 +39,14 @@ describe JavaBuildpack::Component::ModularComponent do
     end
 
     it 'fails if methods are unimplemented' do
-      expect { component.command }.to raise_error
-      expect { component.sub_components(context) }.to raise_error
+      expect { component.command }.to raise_error RuntimeError
+      expect { component.sub_components(context) }.to raise_error RuntimeError
     end
   end
 
   context do
 
-    let(:sub_component) { double('sub_component') }
+    let(:sub_component) { instance_double('sub_component') }
 
     before do
       allow_any_instance_of(StubModularComponent).to receive(:supports?).and_return(true)
@@ -62,13 +63,13 @@ describe JavaBuildpack::Component::ModularComponent do
     end
 
     it 'calls compile on each sub_component' do
-      expect(sub_component).to receive(:compile).twice
+      allow(sub_component).to receive(:compile).twice
 
       component.compile
     end
 
     it 'calls release on each sub_component and then command' do
-      expect(sub_component).to receive(:release).twice
+      allow(sub_component).to receive(:release).twice
       allow_any_instance_of(StubModularComponent).to receive(:command).and_return('test-command')
 
       expect(component.release).to eq('test-command')
@@ -79,6 +80,16 @@ end
 
 class StubModularComponent < JavaBuildpack::Component::ModularComponent
 
-  public :command, :sub_components, :supports?
+  def command
+    super
+  end
+
+  def sub_components(context)
+    super context
+  end
+
+  def supports?
+    super
+  end
 
 end

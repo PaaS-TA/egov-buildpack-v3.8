@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -35,8 +36,7 @@ module JavaBuildpack
       end
 
       # (see JavaBuildpack::Component::BaseComponent#release)
-      def release
-      end
+      def release; end
 
       protected
 
@@ -49,19 +49,19 @@ module JavaBuildpack
 
       FILTER = /session-replication/.freeze
 
-      FLUSH_VALVE_CLASS_NAME = 'com.gopivotal.manager.SessionFlushValve'.freeze
+      FLUSH_VALVE_CLASS_NAME = 'com.gopivotal.manager.SessionFlushValve'
 
-      KEY_HOST_NAME = 'hostname'.freeze
+      KEY_HOST_NAME = 'hostname'
 
-      KEY_HOST = 'host'.freeze
+      KEY_HOST = 'host'
 
-      KEY_PASSWORD = 'password'.freeze
+      KEY_PASSWORD = 'password'
 
-      KEY_PORT = 'port'.freeze
+      KEY_PORT = 'port'
 
-      PERSISTENT_MANAGER_CLASS_NAME = 'org.apache.catalina.session.PersistentManager'.freeze
+      PERSISTENT_MANAGER_CLASS_NAME = 'org.apache.catalina.session.PersistentManager'
 
-      REDIS_STORE_CLASS_NAME = 'com.gopivotal.manager.redis.RedisStore'.freeze
+      REDIS_STORE_CLASS_NAME = 'com.gopivotal.manager.redis.RedisStore'
 
       private_constant :FILTER, :FLUSH_VALVE_CLASS_NAME, :KEY_HOST_NAME, :KEY_PASSWORD, :KEY_PORT,
                        :PERSISTENT_MANAGER_CLASS_NAME, :REDIS_STORE_CLASS_NAME
@@ -72,15 +72,16 @@ module JavaBuildpack
       end
 
       def add_store(manager)
-        credentials = @application.services.find_service(FILTER)['credentials']
+        credentials = @application.services.find_service(FILTER, [KEY_HOST_NAME, KEY_HOST], KEY_PORT,
+                                                         KEY_PASSWORD)['credentials']
 
         manager.add_element 'Store',
-                            'className'          => REDIS_STORE_CLASS_NAME,
-                            'host'               => credentials[KEY_HOST_NAME] || credentials[KEY_HOST],
-                            'port'               => credentials[KEY_PORT],
-                            'database'           => @configuration['database'],
-                            'password'           => credentials[KEY_PASSWORD],
-                            'timeout'            => @configuration['timeout'],
+                            'className' => REDIS_STORE_CLASS_NAME,
+                            'host' => credentials[KEY_HOST_NAME] || credentials[KEY_HOST],
+                            'port' => credentials[KEY_PORT],
+                            'database' => @configuration['database'],
+                            'password' => credentials[KEY_PASSWORD],
+                            'timeout' => @configuration['timeout'],
                             'connectionPoolSize' => @configuration['connection_pool_size']
       end
 
@@ -89,7 +90,7 @@ module JavaBuildpack
       end
 
       def formatter
-        formatter         = REXML::Formatters::Pretty.new(4)
+        formatter = REXML::Formatters::Pretty.new(4)
         formatter.compact = true
         formatter
       end
@@ -102,7 +103,7 @@ module JavaBuildpack
         puts '       Adding Redis-based Session Replication'
 
         document = read_xml context_xml
-        context  = REXML::XPath.match(document, '/Context').first
+        context = REXML::XPath.match(document, '/Context').first
 
         add_valve context
         add_manager context

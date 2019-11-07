@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,8 +17,8 @@
 
 require 'pathname'
 require 'java_buildpack/util'
-require 'java_buildpack/util/configuration_utils_for_was'
 require 'java_buildpack/logging/logger_factory'
+require 'java_buildpack/util/configuration_utils_for_was'
 require 'shellwords'
 require 'yaml'
 
@@ -35,7 +36,9 @@ module JavaBuildpack
         # exist, returns an empty hash. Overlays configuration in a matching environment variable, on top of the loaded
         # configuration, if present. Will not add a new configuration key where an existing one does not exist.
         #
-        # @param [String] identifier the identifier of the configuration
+        # @param [String] identifier the identifier of the configuration to load
+        # @param [Boolean] clean_nil_values whether empty/nil values should be removed along with their keys from the
+        #                                  returned configuration.
         # @param [Boolean] should_log whether the contents of the configuration file should be logged.  This value
         #                             should be left to its default and exists to allow the logger to use the utility.
         # @return [Hash] the configuration or an empty hash if the configuration file does not exist
@@ -51,8 +54,8 @@ module JavaBuildpack
             else
               configuration = load_configuration(file, user_provided, var_name, clean_nil_values, should_log)
             end
-          else
-            logger.debug { "No configuration file #{file} found" } if should_log
+          elsif should_log
+            logger.debug { "No configuration file #{file} found" }
           end
 
           configuration || {}
@@ -74,14 +77,15 @@ module JavaBuildpack
               header.each { |line| f.write line }
               YAML.dump(new_content, f)
             end
-          else
-            logger.debug { "No configuration file #{file} found" } if should_log
+          elsif should_log
+            logger.debug { "No configuration file #{file} found" }
           end
         end
 
         private
 
         CONFIG_DIRECTORY = Pathname.new(File.expand_path('../../../config', File.dirname(__FILE__))).freeze
+
         ENVIRONMENT_VARIABLE_PATTERN = 'JBP_CONFIG_'
 
         private_constant :CONFIG_DIRECTORY, :ENVIRONMENT_VARIABLE_PATTERN
@@ -106,7 +110,8 @@ module JavaBuildpack
           File.open(file, 'r') do |f|
             f.each do |line|
               break if line =~ /^---/
-              fail unless line =~ /^#/ || line =~ /^$/
+              raise unless line =~ /^#/ || line =~ /^$/
+
               header << line
             end
           end
@@ -118,15 +123,15 @@ module JavaBuildpack
           logger.debug { "Configuration from #{file}: #{configuration}" } if should_log
 
           if user_provided
-			      begin
-              user_provided_value = YAML.load(user_provided)
+            begin
+              user_provided_value = YAML.safe_load(user_provided)
               configuration       = merge_configuration(configuration, user_provided_value, var_name, should_log)
-            rescue Psych::SyntaxError => ex
-              raise "User configuration value in environment variable #{var_name} has invalid syntax: #{ex}"
+            rescue Psych::SyntaxError => e
+              raise "User configuration value in environment variable #{var_name} has invalid syntax: #{e}"
             end
             logger.debug { "Configuration from #{file} modified with: #{user_provided}" } if should_log
           end
-          
+
           clean_nil_values configuration if clean_nil_values
           configuration
         end
@@ -137,9 +142,8 @@ module JavaBuildpack
           elsif user_provided_value.is_a?(Array)
             user_provided_value.each { |new_prop| configuration = do_merge(configuration, new_prop, should_log) }
           else
-            fail "User configuration value in environment variable #{var_name} is not valid: #{user_provided_value}"
+            raise "User configuration value in environment variable #{var_name} is not valid: #{user_provided_value}"
           end
-
           configuration
         end
 
@@ -147,8 +151,8 @@ module JavaBuildpack
           hash_v2.each do |key, value|
             if hash_v1.key? key
               hash_v1[key] = do_resolve_value(key, hash_v1[key], value, should_log)
-            else
-              logger.warn { "User config value for '#{key}' is not valid, existing property not present" } if should_log
+            elsif should_log
+              logger.warn { "User config value for '#{key}' is not valid, existing property not present" }
             end
           end
           hash_v1
@@ -156,7 +160,8 @@ module JavaBuildpack
 
         def do_resolve_value(key, v1, v2, should_log)
           return do_merge(v1, v2, should_log) if v1.is_a?(Hash) && v2.is_a?(Hash)
-          return v2 if (!v1.is_a?(Hash)) && (!v2.is_a?(Hash))
+          return v2 if !v1.is_a?(Hash) && !v2.is_a?(Hash)
+
           logger.warn { "User config value for '#{key}' is not valid, must be of a similar type" } if should_log
           v1
         end
@@ -170,6 +175,8 @@ module JavaBuildpack
         end
 
       end
+
     end
+
   end
 end

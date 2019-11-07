@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,13 +22,13 @@ require 'java_buildpack/logging/logger_factory'
 require 'java_buildpack/util/configuration_utils'
 
 describe JavaBuildpack::Logging::LoggerFactory do
-  include_context 'console_helper'
-  include_context 'logging_helper'
+  include_context 'with console help'
+  include_context 'with logging help'
 
   let(:logger) { described_class.instance.get_logger String }
 
   it 'maintains backwards compatibility' do
-    expect(described_class.get_logger String).to be
+    expect(described_class.get_logger(String)).to be_truthy
   end
 
   it 'logs all levels to file',
@@ -184,7 +185,7 @@ describe JavaBuildpack::Logging::LoggerFactory do
 
     before do
       allow(JavaBuildpack::Util::ConfigurationUtils).to receive(:load).with('logging', true, false)
-                                                          .and_return('default_log_level' => 'DEBUG')
+                                                                      .and_return('default_log_level' => 'DEBUG')
       described_class.instance.setup app_dir
     end
 

@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,8 +23,8 @@ require 'java_buildpack/component/droplet'
 require 'pathname'
 
 describe JavaBuildpack::Component::Droplet do
-  include_context 'application_helper'
-  include_context 'droplet_helper'
+  include_context 'with application help'
+  include_context 'with droplet help'
 
   it 'returns additional_libraries' do
     expect(droplet.additional_libraries).to equal(additional_libraries)
@@ -31,6 +32,10 @@ describe JavaBuildpack::Component::Droplet do
 
   it 'returns component_id' do
     expect(droplet.component_id).to eq(component_id)
+  end
+
+  it 'returns extension_directories' do
+    expect(droplet.extension_directories).to equal(extension_directories)
   end
 
   it 'returns java_home' do
@@ -43,6 +48,10 @@ describe JavaBuildpack::Component::Droplet do
 
   it 'returns environment_variables' do
     expect(droplet.environment_variables).to equal(environment_variables)
+  end
+
+  it 'returns security_providers' do
+    expect(droplet.security_providers).to equal(security_providers)
   end
 
   it 'returns an existent child if in application' do

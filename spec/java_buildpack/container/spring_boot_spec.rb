@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,7 +20,7 @@ require 'component_helper'
 require 'java_buildpack/container/spring_boot'
 
 describe JavaBuildpack::Container::SpringBoot do
-  include_context 'component_helper'
+  include_context 'with component help'
 
   it 'detects a dist Spring Boot application',
      app_fixture: 'container_spring_boot_dist' do
@@ -63,18 +64,18 @@ describe JavaBuildpack::Container::SpringBoot do
     component.compile
 
     expect((app_dir + 'bin/application').read)
-      .to match 'CLASSPATH=\$APP_HOME/.additional_libs/test-jar-1.jar:\$APP_HOME/.additional_libs/test-jar-2.jar:'
+      .to match 'CLASSPATH=\$APP_HOME/.additional_libs/test-jar-1.jar:\$APP_HOME/.additional_libs/test-jar-2.jar:' \
+                '\$APP_HOME/.root_libs/test-jar-3.jar:\$APP_HOME/.root_libs/test-jar-4.jar:'
   end
 
   it 'returns command',
      app_fixture: 'container_spring_boot_staged' do
 
-    expect(component.release).to eq("#{env_vars_str} #{java_home.as_env_var} " \
-                                      "JAVA_OPTS=#{java_opts_str} exec $PWD/bin/application")
+    expect(component.release).to eq("#{env_vars_str} #{java_home.as_env_var} exec $PWD/bin/application")
   end
 
   def env_vars_str
-    "#{environment_variables.join(' ')}"
+    environment_variables.join(' ')
   end
 
   def java_opts_str

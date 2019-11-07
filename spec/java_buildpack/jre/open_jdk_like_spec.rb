@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,65 +22,79 @@ require 'java_buildpack/component/mutable_java_home'
 require 'java_buildpack/jre/open_jdk_like'
 require 'java_buildpack/jre/open_jdk_like_jre'
 require 'java_buildpack/jre/open_jdk_like_memory_calculator'
+require 'java_buildpack/jre/open_jdk_like_security_providers'
 
 describe JavaBuildpack::Jre::OpenJDKLike do
-  include_context 'component_helper'
+  include_context 'with component help'
 
   let(:component) { StubOpenJDKLike.new context }
 
   let(:java_home) { JavaBuildpack::Component::MutableJavaHome.new }
 
-  let(:version_7) { VERSION_7 = JavaBuildpack::Util::TokenizedVersion.new('1.7.0_+') }
+  let(:version_7) { JavaBuildpack::Util::TokenizedVersion.new('1.7.0_+') }
+
+  let(:version_8) { JavaBuildpack::Util::TokenizedVersion.new('1.8.0_+') }
 
   let(:configuration) do
-    { 'jre'               => jre_configuration,
-      'memory_calculator' => memory_calculator_configuration }
+    { 'jre' => jre_configuration,
+      'memory_calculator' => memory_calculator_configuration,
+      'jvmkill_agent' => jvmkill_agent_configuration }
   end
 
-  let(:jre_configuration) { double('jre_configuration') }
+  let(:jre_configuration) { instance_double('jre_configuration') }
 
-  let(:memory_calculator_configuration) do
-    { 'memory_sizes'      => { 'metaspace' => '64m..',
-                               'permgen'   => '64m..' },
-      'memory_heuristics' => { 'heap'      => '75',
-                               'metaspace' => '10',
-                               'permgen'   => '10',
-                               'stack'     => '5',
-                               'native'    => '10' },
-      'memory_initials'   => { 'heap'      => '100%',
-                               'metaspace' => '100%',
-                               'permgen'   => '100%' } }
-  end
+  let(:jvmkill_agent_configuration) { {} }
+
+  let(:memory_calculator_configuration) { { 'stack_threads' => '200' } }
 
   it 'always supports' do
-    expect(component.supports?).to be
+    expect(component).to be_supports
   end
 
   it 'creates submodules' do
     allow_any_instance_of(StubOpenJDKLike).to receive(:supports?).and_return false
 
-    expect(JavaBuildpack::Jre::OpenJDKLikeJre)
+    allow(JavaBuildpack::Jre::JvmkillAgent)
+      .to receive(:new).with(sub_configuration_context(jvmkill_agent_configuration))
+    allow(JavaBuildpack::Jre::OpenJDKLikeJre)
       .to receive(:new).with(sub_configuration_context(jre_configuration).merge(component_name: 'Stub Open JDK Like'))
-    expect(JavaBuildpack::Jre::OpenJDKLikeMemoryCalculator)
+    allow(JavaBuildpack::Jre::OpenJDKLikeMemoryCalculator)
       .to receive(:new).with(sub_configuration_context(memory_calculator_configuration))
+    allow(JavaBuildpack::Jre::OpenJDKLikeSecurityProviders)
+      .to receive(:new).with(context)
 
     component.sub_components context
   end
 
-  it 'returns command' do
+  it 'returns command for Java 7' do
     java_home.version = version_7
     expect(component.command).to eq('CALCULATED_MEMORY=$($PWD/.java-buildpack/open_jdk_like/bin/' \
-                                    'java-buildpack-memory-calculator-0.0.0 -memorySizes=permgen:64m.. ' \
-                                    '-memoryWeights=heap:75,permgen:10,stack:5,native:10 ' \
-                                    '-memoryInitials=heap:100%,permgen:100% ' \
-                                    '-totMemory=$MEMORY_LIMIT)')
+                                    'java-buildpack-memory-calculator-0.0.0 -totMemory=$MEMORY_LIMIT' \
+                                    ' -loadedClasses=0 -poolType=permgen -stackThreads=200 -vmOptions="$JAVA_OPTS")' \
+                                    ' && echo JVM Memory Configuration: $CALCULATED_MEMORY && ' \
+                                    'JAVA_OPTS="$JAVA_OPTS $CALCULATED_MEMORY"')
+
+  end
+
+  it 'returns command for Java 8' do
+    java_home.version = version_8
+    expect(component.command).to eq('CALCULATED_MEMORY=$($PWD/.java-buildpack/open_jdk_like/bin/' \
+                                    'java-buildpack-memory-calculator-0.0.0 -totMemory=$MEMORY_LIMIT' \
+                                    ' -loadedClasses=0 -poolType=metaspace -stackThreads=200 -vmOptions="$JAVA_OPTS")' \
+                                    ' && echo JVM Memory Configuration: $CALCULATED_MEMORY && ' \
+                                    'JAVA_OPTS="$JAVA_OPTS $CALCULATED_MEMORY"')
+
   end
 
 end
 
 class StubOpenJDKLike < JavaBuildpack::Jre::OpenJDKLike
 
-  public :command, :sub_components, :supports?
+  public :command, :sub_components
+
+  def supports?
+    super
+  end
 
 end
 

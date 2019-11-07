@@ -1,5 +1,5 @@
-# Introscope Agent Framework
-The Introscope Agent Framework causes an application to be automatically configured to work with a bound [Introscope service][].  **Note:** This framework is disabled by default.
+# CA Introscope APM Framework
+The CA Introscope APM Framework causes an application to be automatically configured to work with a bound [Introscope service][].
 
 <table>
   <tr>
@@ -19,16 +19,21 @@ Tags are printed to standard output by the buildpack detect script
 ## User-Provided Service (Optional)
 Users may optionally provide their own Introscope service. A user-provided Introscope service must have a name or tag with `introscope` in it so that the Introscope Agent Framework will automatically configure the application to work with the service.
 
-The credential payload of the service may contain the following entries:
+The credential payload of the service may contain any valid CA APM Java agent property.
+
+The table below displays a subset of properties that are accepted by the buildpack.
+Please refer to CA APM docs for a full list of valid agent properties.
+
 
 | Name | Description
 | ---- | -----------
-| `agent-name` | (Optional) The name that should be given to this instance of the Introscope agent
-| `host-name` | The host name of the Introscope Enterprise Manager server
-| `ssl` | (Optional) Whether or not to use an SSL connection to the Introscope Enterprise Manager server
-| `port` | (Optional) The port of the Introscope Enterprise Manager server
+|`agent_manager_credential`| (Optional) The credential that is used to connect to the Enterprise Manager server.
+|`agentManager_url_1` | The url of the Enterprise Manager server.
+|`agent_manager_url`| (Deprecated) The url of the Enterprise Manager server.
+|`credential`| (Deprecated) The credential that is used to connect to the Enterprise Manager server
 
-To provide more complex values such as the `agent-name`, using the interactive mode when creating a user-provided service will manage the character escaping automatically. For example, the default `agent-name` could be set with a value of `agent-$(expr "$VCAP_APPLICATION" : '.*application_name[": ]*\([[:word:]]*\).*')` to calculate a value from the Cloud Foundry application name.
+
+To provide more complex values such as the `agent_name`, using the interactive mode when creating a user-provided service will manage the character escaping automatically. For example, the default `agent_name` could be set with a value of `agent-$(expr "$VCAP_APPLICATION" : '.*application_name[": ]*\([[:word:]]*\).*')` to calculate a value from the Cloud Foundry application name.
 
 ## Configuration
 For general information on configuring the buildpack, including how to specify configuration values through environment variables, refer to [Configuration and Extension][].

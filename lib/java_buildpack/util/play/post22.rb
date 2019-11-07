@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -40,15 +41,7 @@ module JavaBuildpack
 
         # (see JavaBuildpack::Util::Play::Base#java_opts)
         def java_opts
-          java_opts = @droplet.java_opts
-
-          java_opts.each do |option|
-            next unless option.shellsplit.length > 1 && !bash_expression?(option)
-
-            fail "Invalid Java option contains more than one option: '#{option}'"
-          end
-
-          java_opts.map { |option| option == '$CALCULATED_MEMORY' ? '${CALCULATED_MEMORY//-/-J-}' : "-J#{option}" }
+          '$(for I in $JAVA_OPTS ; do echo "-J$I" ; done)'
         end
 
         # (see JavaBuildpack::Util::Play::Base#lib_dir)
@@ -65,7 +58,7 @@ module JavaBuildpack
         #
         # @return [Pathname] the root of the play application
         def root
-          fail "Method 'root' must be defined"
+          raise "Method 'root' must be defined"
         end
 
         private

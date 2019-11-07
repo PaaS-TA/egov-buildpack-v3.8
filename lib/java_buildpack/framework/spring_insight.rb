@@ -1,6 +1,7 @@
-# Encoding: utf-8
+# frozen_string_literal: true
+
 # Cloud Foundry Java Buildpack
-# Copyright 2013-2016 the original author or authors.
+# Copyright 2013-2019 the original author or authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -44,14 +45,16 @@ module JavaBuildpack
       # (see JavaBuildpack::Component::BaseComponent#compile)
       def compile
         JavaBuildpack::Util::Cache::InternetAvailability.instance.available(
-          true, 'The Spring Insight download location is always accessible') do
+          true, 'The Spring Insight download location is always accessible'
+        ) do
           download(@version, @uri) { |file| expand file }
         end
       end
 
       # (see JavaBuildpack::Component::BaseComponent#release)
       def release
-        @droplet.java_opts
+        @droplet
+          .java_opts
           .add_javaagent(weaver_jar)
           .add_system_property('insight.base', insight_directory)
           .add_system_property('insight.logs', logs_directory)
@@ -138,7 +141,7 @@ module JavaBuildpack
       end
 
       def find_insight_agent
-        service     = @application.services.find_service FILTER
+        service     = @application.services.find_service FILTER, 'agent_download_url', 'service_instance_id'
         credentials = service['credentials']
         version     = credentials['version'] || '1.0.0'
         uri         = credentials['agent_download_url']
@@ -168,7 +171,8 @@ module JavaBuildpack
 
       def uber_agent_zip(location)
         candidates = Pathname.glob(location + 'springsource-insight-uber-agent-*.zip')
-        fail 'There was not exactly one Uber Agent zip' if candidates.size != 1
+        raise 'There was not exactly one Uber Agent zip' if candidates.size != 1
+
         candidates[0]
       end
 
@@ -183,6 +187,7 @@ module JavaBuildpack
       def transport_plugin(root)
         return root + 'transport/http/insight-agent-http-*.jar' if http_transport?
         return root + 'transport/rabbitmq/insight-agent-rabbitmq-*.jar' if rabbit_transport?
+
         (root + 'transport/activemq/insight-agent-activemq-*.jar') if active_transport?
       end
 
